@@ -25,6 +25,7 @@ from dfcc.bundle import compile_bundle_from_accepted_clauses
 from dfcc.canonical import CanonicalizationError, canonical_bytes, digest_json
 from dfcc.certificate import certify_claim, certify_claim_from_artifact_bundle
 from dfcc.models import IssueCertificate, StatusAuthorityView
+from dfcc.profiles import IMPLEMENTED_PROFILES
 from dfcc.records import set_ref
 from dfcc.schema import validate_named_schema
 from dfcc.serialization import to_jsonable
@@ -863,21 +864,63 @@ def _artifact_bundle_from_entries(
     root_artifact_id: str = "artifact:cert",
 ) -> dict[str, Any]:
     refs = [entry["artifact_ref"] for entry in entries]
-    return {
-        "bundle_id": f"bundle:{case_id}",
-        "manifest": {
-            "manifest_id": f"manifest:{case_id}",
-            "root_artifact_id": root_artifact_id,
-            "artifact_refs": refs,
-            "dependency_order": [str(ref["artifact_id"]) for ref in refs],
-            "semantic_roles": {
-                str(ref["artifact_id"]): str(ref.get("semantic_role") or entry["role"])
-                for ref, entry in zip(refs, entries, strict=True)
+    return _with_fixture_manifest_digest(
+        {
+            "bundle_id": f"bundle:{case_id}",
+            "manifest": {
+                "manifest_id": f"manifest:{case_id}",
+                "root_artifact_id": root_artifact_id,
+                "artifact_refs": refs,
+                "dependency_order": [str(ref["artifact_id"]) for ref in refs],
+                "semantic_roles": {
+                    str(ref["artifact_id"]): str(ref.get("semantic_role") or entry["role"])
+                    for ref, entry in zip(refs, entries, strict=True)
+                },
             },
-        },
-        "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
-        "artifacts": entries,
+            "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
+            "artifacts": entries,
+        }
+    )
+
+
+def _fixture_manifest_identity(bundle_source: dict[str, Any]) -> dict[str, Any]:
+    bundle = artifact_bundle_from_json(bundle_source)
+    return {
+        "manifest_id": bundle.manifest.manifest_id,
+        "root_artifact_id": bundle.manifest.root_artifact_id,
+        "artifact_refs": [
+            {
+                "artifact_id": ref.artifact_id,
+                "artifact_type": ref.artifact_type,
+                "digest_value": ref.digest_value,
+                "semantic_role": ref.semantic_role,
+                "schema_profile": ref.schema_profile,
+                "schema_digest": ref.schema_digest,
+                "canonicalization": ref.canonicalization,
+                "canonicalization_digest": ref.canonicalization_digest,
+                "retrieval_policy": ref.retrieval_policy,
+                "immutability_policy": ref.immutability_policy,
+                "provenance_refs": list(ref.provenance_refs),
+                "dependency_labels": list(ref.dependency_labels),
+            }
+            for ref in bundle.manifest.artifact_refs
+        ],
+        "dependency_order": list(bundle.manifest.dependency_order),
+        "semantic_roles": bundle.manifest.semantic_roles,
+        "fixed_point_admissions": list(bundle.manifest.fixed_point_admissions),
     }
+
+
+def _with_fixture_manifest_digest(source: dict[str, Any]) -> dict[str, Any]:
+    manifest = dict(source["manifest"])
+    bundle = artifact_bundle_from_json({**source, "manifest": manifest})
+    manifest["manifest_digest"] = manifest_digest(
+        _fixture_manifest_identity({**source, "manifest": manifest}),
+        artifact_type="manifest",
+        schema_profile_digest="DFCC-Interop",
+        dependencies=bundle.manifest.artifact_refs,
+    )
+    return {**source, "manifest": manifest}
 
 
 def _interop_artifact_bundle_fixture(case: dict[str, Any]) -> dict[str, Any]:
@@ -890,23 +933,25 @@ def _interop_artifact_bundle_fixture(case: dict[str, Any]) -> dict[str, Any]:
             digest_value="sha256:canonicalization-mismatch-input",
             semantic_role=ArtifactRole.ROOT.value,
         )
-        return {
-            "bundle_id": f"bundle:{case_id}",
-            "manifest": {
-                "manifest_id": f"manifest:{case_id}",
-                "root_artifact_id": ref.artifact_id,
-                "artifact_refs": [to_jsonable(ref)],
-                "dependency_order": [ref.artifact_id],
-            },
-            "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
-            "artifacts": [
-                {
-                    "artifact_ref": to_jsonable(ref),
-                    "artifact": {"x": 1.2},
-                    "role": ArtifactRole.ROOT.value,
-                }
-            ],
-        }
+        return _with_fixture_manifest_digest(
+            {
+                "bundle_id": f"bundle:{case_id}",
+                "manifest": {
+                    "manifest_id": f"manifest:{case_id}",
+                    "root_artifact_id": ref.artifact_id,
+                    "artifact_refs": [to_jsonable(ref)],
+                    "dependency_order": [ref.artifact_id],
+                },
+                "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
+                "artifacts": [
+                    {
+                        "artifact_ref": to_jsonable(ref),
+                        "artifact": {"x": 1.2},
+                        "role": ArtifactRole.ROOT.value,
+                    }
+                ],
+            }
+        )
     if fixture == "interop:schema-invalid":
         schema_artifact: dict[str, Any] = {"certificate_id": "missing-required-fields"}
         return _artifact_bundle_from_entries(
@@ -945,23 +990,25 @@ def _interop_artifact_bundle_fixture(case: dict[str, Any]) -> dict[str, Any]:
             ref.semantic_role,
             ref.dependency_labels,
         )
-        return {
-            "bundle_id": f"bundle:{case_id}",
-            "manifest": {
-                "manifest_id": f"manifest:{case_id}",
-                "root_artifact_id": bad_ref.artifact_id,
-                "artifact_refs": [to_jsonable(bad_ref)],
-                "dependency_order": [bad_ref.artifact_id],
-            },
-            "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
-            "artifacts": [
-                {
-                    "artifact_ref": to_jsonable(bad_ref),
-                    "artifact": digest_artifact,
-                    "role": ArtifactRole.ROOT.value,
-                }
-            ],
-        }
+        return _with_fixture_manifest_digest(
+            {
+                "bundle_id": f"bundle:{case_id}",
+                "manifest": {
+                    "manifest_id": f"manifest:{case_id}",
+                    "root_artifact_id": bad_ref.artifact_id,
+                    "artifact_refs": [to_jsonable(bad_ref)],
+                    "dependency_order": [bad_ref.artifact_id],
+                },
+                "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
+                "artifacts": [
+                    {
+                        "artifact_ref": to_jsonable(bad_ref),
+                        "artifact": digest_artifact,
+                        "role": ArtifactRole.ROOT.value,
+                    }
+                ],
+            }
+        )
     if fixture == "interop:missing-ref":
         missing_ref_artifact: dict[str, Any] = {"x": {"y": "z"}}
         ref = build_artifact_ref(
@@ -970,24 +1017,26 @@ def _interop_artifact_bundle_fixture(case: dict[str, Any]) -> dict[str, Any]:
             artifact_type="json",
             semantic_role=ArtifactRole.ROOT,
         )
-        return {
-            "bundle_id": f"bundle:{case_id}",
-            "manifest": {
-                "manifest_id": f"manifest:{case_id}",
-                "root_artifact_id": ref.artifact_id,
-                "artifact_refs": [to_jsonable(ref)],
-                "dependency_order": [ref.artifact_id],
-            },
-            "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
-            "artifacts": [
-                {
-                    "artifact_ref": to_jsonable(ref),
-                    "artifact": missing_ref_artifact,
-                    "role": ArtifactRole.ROOT.value,
-                    "reason_paths": ["/missing"],
-                }
-            ],
-        }
+        return _with_fixture_manifest_digest(
+            {
+                "bundle_id": f"bundle:{case_id}",
+                "manifest": {
+                    "manifest_id": f"manifest:{case_id}",
+                    "root_artifact_id": ref.artifact_id,
+                    "artifact_refs": [to_jsonable(ref)],
+                    "dependency_order": [ref.artifact_id],
+                },
+                "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
+                "artifacts": [
+                    {
+                        "artifact_ref": to_jsonable(ref),
+                        "artifact": missing_ref_artifact,
+                        "role": ArtifactRole.ROOT.value,
+                        "reason_paths": ["/missing"],
+                    }
+                ],
+            }
+        )
     if fixture == "interop:manifest-order-conflict":
         dep_b = build_artifact_ref({"b": 1}, artifact_id="artifact:b", artifact_type="json")
         dep_a_base = build_artifact_ref({"a": 1}, artifact_id="artifact:a", artifact_type="json")
@@ -1012,17 +1061,19 @@ def _interop_artifact_bundle_fixture(case: dict[str, Any]) -> dict[str, Any]:
             {"artifact_ref": to_jsonable(dep_a), "artifact": {"a": 1}, "role": "root"},
             {"artifact_ref": to_jsonable(dep_b), "artifact": {"b": 1}, "role": "other"},
         ]
-        return {
-            "bundle_id": f"bundle:{case_id}",
-            "manifest": {
-                "manifest_id": f"manifest:{case_id}",
-                "root_artifact_id": "artifact:a",
-                "artifact_refs": [to_jsonable(dep_a), to_jsonable(dep_b)],
-                "dependency_order": ["artifact:a", "artifact:b"],
-            },
-            "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
-            "artifacts": entries,
-        }
+        return _with_fixture_manifest_digest(
+            {
+                "bundle_id": f"bundle:{case_id}",
+                "manifest": {
+                    "manifest_id": f"manifest:{case_id}",
+                    "root_artifact_id": "artifact:a",
+                    "artifact_refs": [to_jsonable(dep_a), to_jsonable(dep_b)],
+                    "dependency_order": ["artifact:a", "artifact:b"],
+                },
+                "reference_context": {"snapshot_id": f"snapshot:{case_id}"},
+                "artifacts": entries,
+            }
+        )
     raise ValueError(f"unknown interop artifact-bundle fixture: {fixture}")
 
 
@@ -1055,6 +1106,7 @@ def _authority_artifact_bundle_fixture(case: dict[str, Any]) -> dict[str, Any]:
     elif fixture == "authority:stale-embedded-source":
         stale_embedded_source = True
     elif fixture == "authority:raw-evidence-only":
+        include_kernel_proof = False
         extra_entries.append(
             _artifact_bundle_entry(
                 {
@@ -1342,34 +1394,36 @@ def _authority_artifact_bundle_fixture(case: dict[str, Any]) -> dict[str, Any]:
             "transitions": [{"from": {"temp": "70"}, "to": {"temp": "70"}}],
         }
         issue_entries = [
-            _artifact_bundle_entry(claim_source, ArtifactRole.CLAIM, "artifact:claim"),
+            _artifact_bundle_entry(claim_source, ArtifactRole.CLAIM, "claim:safe-temp"),
             _artifact_bundle_entry(
                 bundle_source,
                 ArtifactRole.ASSUMPTION_BUNDLE,
-                "artifact:bundle",
+                "accepted-bundle:finite-demo",
             ),
-            _artifact_bundle_entry(anchor_source, ArtifactRole.ANCHOR, "artifact:anchor"),
+            _artifact_bundle_entry(anchor_source, ArtifactRole.ANCHOR, "anchor:issue"),
             _artifact_bundle_entry(
                 time_basis_source,
                 ArtifactRole.TIME_BASIS,
-                "artifact:time-basis",
+                "utc-demo",
             ),
             *_accepted_clause_fixture_entries(accepted_clause),
         ]
         formal_issue = certify_claim_from_artifact_bundle(
             artifact_bundle_from_json(
-                {
-                    "bundle_id": "bundle:formal-golden-issue",
-                    "manifest": {
-                        "manifest_id": "manifest:formal-golden-issue",
-                        "root_artifact_id": "artifact:claim",
-                        "artifact_refs": [entry["artifact_ref"] for entry in issue_entries],
-                        "dependency_order": [
-                            str(entry["artifact_ref"]["artifact_id"]) for entry in issue_entries
-                        ],
-                    },
-                    "artifacts": issue_entries,
-                }
+                _with_fixture_manifest_digest(
+                    {
+                        "bundle_id": "bundle:formal-golden-issue",
+                        "manifest": {
+                            "manifest_id": "manifest:formal-golden-issue",
+                            "root_artifact_id": "claim:safe-temp",
+                            "artifact_refs": [entry["artifact_ref"] for entry in issue_entries],
+                            "dependency_order": [
+                                str(entry["artifact_ref"]["artifact_id"]) for entry in issue_entries
+                            ],
+                        },
+                        "artifacts": issue_entries,
+                    }
+                )
             )
         )
         if isinstance(formal_issue, ValidationResult):
@@ -1569,6 +1623,8 @@ def _case_matches_suite(case: dict[str, Any], suite: str | None) -> bool:
     case_suite = _case_suite(case)
     if suite == "legacy":
         return case_suite.startswith("legacy")
+    if suite == "strict":
+        return case_suite == "strict" or bool(case.get("strict", False))
     return case_suite == suite
 
 
@@ -1904,7 +1960,52 @@ def run_golden_cases(
     suite: str | None = None,
 ) -> tuple[GoldenResult, ...]:
     results: list[GoldenResult] = []
-    for case in load_golden_cases(case_dir):
+    cases = load_golden_cases(case_dir)
+    available_suites = {str(case.get("suite", "primary")) for case in cases}
+    available_suites.update({"legacy", "strict"})
+    if suite is not None and suite not in available_suites:
+        return (
+            GoldenResult(
+                "conformance-unknown-suite",
+                False,
+                "known_suite",
+                f"unknown_suite:{suite}",
+                equality_key=digest_json({"suite": suite, "failure": "unknown_suite"}),
+            ),
+        )
+    if case_dir is None and suite in {None, "strict"}:
+        loaded_case_ids = {str(case.get("case_id", "")) for case in cases}
+        for profile in IMPLEMENTED_PROFILES.values():
+            if not profile.golden_case_set:
+                results.append(
+                    GoldenResult(
+                        f"profile:{profile.profile_id}:golden-case-set",
+                        False,
+                        "nonempty_golden_case_set",
+                        "missing_golden_case_set",
+                        equality_key=digest_json(
+                            {"profile": profile.profile_id, "failure": "missing_golden_case_set"}
+                        ),
+                    )
+                )
+            for required_case in profile.golden_case_set:
+                if required_case not in loaded_case_ids:
+                    results.append(
+                        GoldenResult(
+                            f"profile:{profile.profile_id}:{required_case}",
+                            False,
+                            "required_golden_case",
+                            "missing_required_golden_case",
+                            equality_key=digest_json(
+                                {
+                                    "profile": profile.profile_id,
+                                    "case_id": required_case,
+                                    "failure": "missing_required_golden_case",
+                                }
+                            ),
+                        )
+                    )
+    for case in cases:
         if not _case_matches_suite(case, suite):
             continue
         contract_failure = _case_contract_failure(case)

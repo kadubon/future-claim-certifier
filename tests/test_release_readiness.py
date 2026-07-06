@@ -18,11 +18,12 @@ def _read_text(path: str) -> str:
 def test_release_metadata_matches_public_distribution() -> None:
     project = tomllib.loads(_read_text("pyproject.toml"))["project"]
     openapi = yaml.safe_load(_read_text("docs/openapi.yaml"))
+    version = project["version"]
 
     assert project["name"] == "future-claim-certifier"
-    assert project["version"] == "1.1.0.dev0"
-    assert dfcc.__version__ == "1.1.0.dev0"
-    assert openapi["info"]["version"] == "1.1.0.dev0"
+    assert version in {"1.1.0.dev0", "1.1.0"}
+    assert dfcc.__version__ == version
+    assert openapi["info"]["version"] == version
     assert project["description"] == (
         "Replayable Python protocol engine for validating time-bound future claims "
         "from canonical artifacts."
@@ -30,7 +31,12 @@ def test_release_metadata_matches_public_distribution() -> None:
     assert project["urls"]["Homepage"] == "https://doi.org/10.5281/zenodo.21199529"
     assert project["urls"]["Source"] == "https://github.com/kadubon/future-claim-certifier"
     assert project["urls"]["Issues"] == ("https://github.com/kadubon/future-claim-certifier/issues")
-    assert "Development Status :: 5 - Production/Stable" in project["classifiers"]
+    expected_status = (
+        "Development Status :: 4 - Beta"
+        if version.endswith(".dev0")
+        else "Development Status :: 5 - Production/Stable"
+    )
+    assert expected_status in project["classifiers"]
     assert "rfc8785>=0.1.4" in project["dependencies"]
     assert {
         "agent-safety",
@@ -90,6 +96,12 @@ def test_publish_workflow_uses_pypi_trusted_publishing() -> None:
         step.get("run") == "uv sync --locked --all-groups --python 3.11" for step in build_steps
     )
     assert any(step.get("run") == "uv run pytest" for step in build_steps)
+    assert any(
+        step.get("run") == "uv run python -m dfcc.cli conformance run --suite strict"
+        for step in build_steps
+    )
+    assert any("SHA256SUMS.txt" in str(step.get("run", "")) for step in build_steps)
+    assert any("gh attestation sign" in str(step.get("run", "")) for step in build_steps)
 
 
 def test_github_workflows_pin_actions_and_run_strict_checks() -> None:
@@ -111,4 +123,5 @@ def test_github_workflows_pin_actions_and_run_strict_checks() -> None:
     assert "uv sync --locked --all-groups --python ${{ matrix.python-version }}" in runs
     assert "uv run python -m dfcc.cli conformance run --suite primary" in runs
     assert "uv run python -m dfcc.cli conformance run --suite legacy" in runs
+    assert "uv run python -m dfcc.cli conformance run --suite strict" in runs
     assert (ROOT / ".github" / "CODEOWNERS").exists()

@@ -8,7 +8,17 @@
   "properties": {
     "obligation_id": { "type": "string", "minLength": 1 },
     "kind": { "type": "string", "minLength": 1 },
-    "status": { "enum": ["pass", "fail", "unknown", "waived", "inactive", "not_checked"] },
+    "status": {
+      "enum": [
+        "pass",
+        "fail",
+        "unknown",
+        "waived",
+        "inactive",
+        "not_checked",
+        "not_applicable"
+      ]
+    },
     "scope": { "type": "array", "items": { "type": "string" }, "default": [] },
     "checker": { "type": ["string", "null"] },
     "expiry": { "type": ["string", "null"] },

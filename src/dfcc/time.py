@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -17,6 +18,14 @@ class TimeBasisError(ValueError):
 
 
 _MICROSECONDS_PER_SECOND = Decimal(1_000_000)
+_RFC3339_RE = re.compile(
+    r"^(?P<date>\d{4}-\d{2}-\d{2})T"
+    r"(?P<hour>[01]\d|2[0-3]):"
+    r"(?P<minute>[0-5]\d):"
+    r"(?P<second>[0-5]\d)"
+    r"(?P<fraction>\.\d{1,6})?"
+    r"(?P<offset>Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$"
+)
 
 
 def _decimal_seconds(value: Decimal | int | str, *, field_name: str) -> Decimal:
@@ -41,7 +50,12 @@ def _duration_from_seconds(value: Decimal | int | str, *, field_name: str) -> ti
 
 
 def parse_rfc3339(value: str) -> datetime:
-    text = value
+    text = value.strip()
+    if not _RFC3339_RE.fullmatch(text):
+        raise TimeBasisError(
+            "timestamp must be RFC3339 with uppercase Z or explicit offset and "
+            "at most microsecond precision"
+        )
     if text.endswith("Z"):
         text = f"{text[:-1]}+00:00"
     dt = datetime.fromisoformat(text)
@@ -119,7 +133,7 @@ class HorizonAnchor:
 class ClockResult:
     status: StatusCode
     index: int | None = None
-    margin_seconds: float | None = None
+    margin_microseconds: int | None = None
 
 
 def status_clock(
@@ -144,9 +158,12 @@ def status_clock(
         return ClockResult(StatusCode.BOUNDARY_UNKNOWN)
 
     index = indices.pop()
-    distances = [abs((status_time - item).total_seconds()) for item in anchor.anchors]
+    distances = [
+        abs(int((status_time.astimezone(UTC) - item).total_seconds() * 1_000_000))
+        for item in anchor.anchors
+    ]
     margin = min(distances) if distances else None
-    return ClockResult(StatusCode.ACTIVE, index=index, margin_seconds=margin)
+    return ClockResult(StatusCode.ACTIVE, index=index, margin_microseconds=margin)
 
 
 def parse_time_basis(source: Mapping[str, Any]) -> TimeBasis:

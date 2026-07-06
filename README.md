@@ -58,26 +58,46 @@ line tool is `dfcc`.
 
 ## Five-Minute CLI Flow
 
-Create a certificate from the safe-temperature example:
+Strict authority starts from an artifact bundle. The bundle contains the claim,
+time basis, accepted clauses or explicit trust assumptions, proof references,
+and a manifest digest. Use this path for decisions that another process or
+agent will rely on later:
+
+```bash
+uv run dfcc validate-bundle artifact-bundle.json --full-replay
+uv run dfcc certify-bundle artifact-bundle.json --out issue.json
+uv run dfcc replay-status --bundle artifact-bundle.json
+```
+
+The direct safe-temperature example is useful for learning and migration. It is
+not the strict authority path unless synthetic trust is explicitly allowed:
 
 ```bash
 uv run dfcc certify examples/safe_temperature/spec.json --out issue.json
-```
-
-Check whether a represented use is allowed at status time:
-
-```bash
 uv run dfcc check \
   issue.json \
   examples/safe_temperature/proposed_use.json \
   examples/safe_temperature/status_context.json \
+  --allow-synthetic-trust \
   --out status-view.json
 ```
 
-Run full artifact-bundle replay:
+Without `--allow-synthetic-trust`, direct checks return a blocking `unknown`
+when the evidence is not bound to artifacts. This default prevents embedded
+source, raw evidence, or unstated trust from becoming authority.
+
+Check whether a represented use is allowed from a strict bundle:
 
 ```bash
-uv run dfcc validate-bundle artifact-bundle.json --full-replay
+uv run dfcc validate-bundle artifact-bundle.json --full-replay --out report.json
+```
+
+Run packaged conformance suites:
+
+```bash
+uv run dfcc conformance run --suite primary
+uv run dfcc conformance run --suite legacy
+uv run dfcc conformance run --suite strict
 ```
 
 Replay lifecycle/status data directly from a bundle:
@@ -91,13 +111,6 @@ List and export schemas:
 ```bash
 uv run dfcc schema list
 uv run dfcc schema export issue-certificate.schema.json --out issue-schema.json
-```
-
-Run packaged conformance suites:
-
-```bash
-uv run dfcc conformance run --suite primary
-uv run dfcc conformance run --suite legacy
 ```
 
 ## Python Example
@@ -123,6 +136,8 @@ certificate = certify_claim_from_artifact_bundle(artifact_bundle)
 
 The strict path uses accepted clauses or explicit trust assumptions. Raw
 evidence is audit data only and cannot silently change the certified semantics.
+Strict replay also requires the bundle manifest digest. A missing digest becomes
+`missing_ref`; a stale digest becomes `digest_mismatch`.
 
 The direct convenience API is retained for migration and local examples:
 
@@ -193,6 +208,8 @@ The repository CI runs:
 - bandit;
 - pip-audit;
 - primary and legacy conformance suites;
+- strict conformance cases that prove raw evidence, embedded source, missing
+  manifest digest, and unbound proof refs cannot authorize a claim;
 - package build and distribution metadata checks.
 
 PyPI publishing uses GitHub Actions Trusted Publishing. No long-lived PyPI API

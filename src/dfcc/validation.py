@@ -530,6 +530,12 @@ def _manifest_identity(bundle: ArtifactBundle) -> dict[str, Any]:
                 "artifact_type": ref.artifact_type,
                 "digest_value": ref.digest_value,
                 "semantic_role": ref.semantic_role,
+                "schema_profile": ref.schema_profile,
+                "schema_digest": ref.schema_digest,
+                "canonicalization": ref.canonicalization,
+                "canonicalization_digest": ref.canonicalization_digest,
+                "retrieval_policy": ref.retrieval_policy,
+                "immutability_policy": ref.immutability_policy,
                 "provenance_refs": list(ref.provenance_refs),
                 "dependency_labels": list(ref.dependency_labels),
             }
@@ -541,8 +547,18 @@ def _manifest_identity(bundle: ArtifactBundle) -> dict[str, Any]:
     }
 
 
-def _validate_manifest_digest(bundle: ArtifactBundle) -> ValidationResult:
+def _validate_manifest_digest(bundle: ArtifactBundle, *, strict: bool = False) -> ValidationResult:
     if bundle.manifest.manifest_digest is None:
+        if strict:
+            return validation_failure(
+                FailureCode.MISSING_REF,
+                ValidationStage.DIGEST_CHECK,
+                "strict artifact-bundle replay requires manifest_digest",
+                status=ValidationStatus.UNKNOWN,
+                layer=Layer.INTEROP,
+                source_artifact=bundle.manifest.manifest_id,
+                source_path="/manifest_digest",
+            )
         return pass_validation(ValidationStage.DIGEST_CHECK)
     actual = manifest_digest(
         _manifest_identity(bundle),
@@ -740,7 +756,7 @@ def _validate_wire_artifact(entry: ArtifactEntry) -> ValidationResult:
     return pass_validation(ValidationStage.SCHEMA_VALIDATE)
 
 
-def _digest_stage(bundle: ArtifactBundle) -> ValidationResult:
+def _digest_stage(bundle: ArtifactBundle, *, strict: bool = False) -> ValidationResult:
     policy = {
         "allowed_retrieval_policies": bundle.reference_context.allowed_retrieval_policies,
         "allowed_immutability_policies": bundle.reference_context.allowed_immutability_policies,
@@ -786,7 +802,7 @@ def _digest_stage(bundle: ArtifactBundle) -> ValidationResult:
     )
     if not result.passed:
         return result
-    return _validate_manifest_digest(bundle)
+    return _validate_manifest_digest(bundle, strict=strict)
 
 
 def _reference_stage(
@@ -1005,7 +1021,7 @@ def validate_artifact_bundle(
             if not schema.passed:
                 _append_blocked_stages(stage_results, schema, bundle.bundle_id)
             else:
-                digest = _digest_stage(bundle)
+                digest = _digest_stage(bundle, strict=full_replay)
                 stage_results.append(digest)
                 if not digest.passed:
                     _append_blocked_stages(stage_results, digest, bundle.bundle_id)

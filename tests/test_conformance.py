@@ -94,10 +94,10 @@ def test_bundled_primary_authority_fixtures_materialize_to_full_replay() -> None
         and str(case.get("fixture", "")).startswith("authority:")
         and case.get("fixture") != "authority:missing-confluence-proof"
         and case.get("fixture") != "authority:accepted-clause-target-mismatch"
+        and case.get("fixture") != "authority:stale-embedded-source"
     ]
     assert {
         "authority:missing-kernel-proof",
-        "authority:stale-embedded-source",
         "authority:raw-evidence-only",
         "authority:operational-accept",
         "authority:operational-reject",
@@ -138,7 +138,11 @@ def test_bundled_primary_authority_fixtures_materialize_to_full_replay() -> None
             assert report.authority_view.authority_outcome.code == "assert"
             assert [clause.clause_id for clause in report.accepted_clause_records]
         if fixture == "authority:raw-evidence-only":
-            assert report.authority_view.authority_outcome.code == "assert"
+            assert report.authority_view.authority_outcome.code == "unknown"
+            assert any(
+                block.failure_code.value == "checker_unknown"
+                for block in report.authority_view.blocking_set
+            )
             assert not report.accepted_clause_records
         if fixture == "authority:stale-embedded-source":
             assert report.authority_view.authority_outcome.code == "assert"

@@ -22,8 +22,15 @@ result.
 For strict use, prefer artifact-bundle replay:
 
 ```bash
+uv run dfcc certify-bundle artifact-bundle.json --out issue.json
 uv run dfcc validate-bundle artifact-bundle.json --full-replay
 uv run dfcc replay-status --bundle artifact-bundle.json
+```
+
+For a quick safety regression check, run:
+
+```bash
+uv run dfcc conformance run --suite strict
 ```
 
 ## What The Agent Should Trust

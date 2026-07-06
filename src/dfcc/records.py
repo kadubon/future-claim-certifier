@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from dfcc.canonical import digest_json
+from dfcc.time import parse_rfc3339
 from dfcc.types import (
     FailureCode,
     Layer,
@@ -16,6 +18,8 @@ from dfcc.types import (
     pass_validation,
     validation_failure,
 )
+
+_DECIMAL_LEXICAL_RE = re.compile(r"^-?(?:0|[1-9]\d*)(?:\.\d+)?$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,10 +31,15 @@ class ScalarRecord:
     uncertainty_ref: str | None = None
 
     def decimal(self) -> Decimal:
+        if not _DECIMAL_LEXICAL_RE.fullmatch(self.decimal_string):
+            raise ValueError(f"invalid canonical decimal string: {self.decimal_string}")
         try:
-            return Decimal(self.decimal_string)
+            value = Decimal(self.decimal_string)
         except InvalidOperation as exc:
             raise ValueError(f"invalid decimal string: {self.decimal_string}") from exc
+        if not value.is_finite():
+            raise ValueError(f"decimal string must be finite: {self.decimal_string}")
+        return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,13 +63,7 @@ class TimestampRecord:
     timestamp_policy_ref: str | None = None
 
     def datetime(self) -> datetime:
-        text = self.lexical_time
-        if text.endswith("Z"):
-            text = f"{text[:-1]}+00:00"
-        dt = datetime.fromisoformat(text)
-        if dt.tzinfo is None:
-            raise ValueError("timestamp must include an explicit offset")
-        return dt.astimezone(UTC)
+        return parse_rfc3339(self.lexical_time)
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +87,8 @@ def scalar_record(
     decimal_string = format(value, "f") if isinstance(value, Decimal) else str(value)
     record = ScalarRecord(decimal_string, unit, dimension, exactness, uncertainty)
     record.decimal()
+    if not unit or not dimension or not exactness:
+        raise ValueError("scalar unit, dimension, and exactness must be nonempty")
     return record
 
 
@@ -96,6 +101,10 @@ def interval_record(
 ) -> IntervalRecord:
     if lower.decimal() > upper.decimal():
         raise ValueError("interval lower bound must be <= upper bound")
+    if lower.unit_ref != upper.unit_ref:
+        raise ValueError("interval bounds must use the same unit_ref")
+    if lower.dimension_ref != upper.dimension_ref:
+        raise ValueError("interval bounds must use the same dimension_ref")
     return IntervalRecord(lower, upper, closure[0], closure[1], uncertainty, basis)
 
 
@@ -129,6 +138,8 @@ def set_ref(
 def validate_scalar_record(record: ScalarRecord) -> ValidationResult:
     try:
         record.decimal()
+        if not record.unit_ref or not record.dimension_ref or not record.exactness:
+            raise ValueError("scalar unit_ref, dimension_ref, and exactness must be nonempty")
     except ValueError as exc:
         return validation_failure(
             FailureCode.SCHEMA_INVALID,
@@ -144,6 +155,10 @@ def validate_interval_record(record: IntervalRecord) -> ValidationResult:
     try:
         if record.lower.decimal() > record.upper.decimal():
             raise ValueError("interval lower bound must be <= upper bound")
+        if record.lower.unit_ref != record.upper.unit_ref:
+            raise ValueError("interval bounds must use the same unit_ref")
+        if record.lower.dimension_ref != record.upper.dimension_ref:
+            raise ValueError("interval bounds must use the same dimension_ref")
     except ValueError as exc:
         return validation_failure(
             FailureCode.SCHEMA_INVALID,

@@ -59,6 +59,12 @@ DFCC_INTEROP = ConformanceProfile(
         "unsupported_profile",
         "artifact_conflict",
     ),
+    golden_case_set=(
+        "primary-full-replay-canonicalization-mismatch",
+        "primary-full-replay-schema-invalid",
+        "primary-full-replay-digest-mismatch",
+        "primary-full-replay-missing-ref",
+    ),
 )
 
 
@@ -72,6 +78,10 @@ DFCC_CORE = ConformanceProfile(
         "digest_mismatch",
         "artifact_conflict",
         "checker_unknown",
+    ),
+    golden_case_set=(
+        "primary-full-replay-missing-kernel-proof",
+        "primary-full-replay-raw-evidence-only",
     ),
 )
 
@@ -90,6 +100,11 @@ DFCC_STATUS = ConformanceProfile(
         "revoked",
         "superseded",
     ),
+    golden_case_set=(
+        "primary-full-replay-conflicting-traces",
+        "primary-full-replay-expired-clock",
+        "primary-full-replay-boundary-unknown-clock",
+    ),
 )
 
 
@@ -106,6 +121,12 @@ DFCC_OPERATIONAL = ConformanceProfile(
         "assoc_mixed",
         "out_of_frame",
         "policy_block",
+    ),
+    golden_case_set=(
+        "primary-full-replay-operational-accept",
+        "primary-full-replay-operational-reject",
+        "primary-full-replay-missing-completion-proof",
+        "primary-full-replay-operational-agreement-mismatch",
     ),
 )
 

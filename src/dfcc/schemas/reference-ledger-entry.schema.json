@@ -19,7 +19,15 @@
     "expected_semantic_role",
     "expected_digest",
     "required_stage",
-    "active_scope_status"
+    "active_scope_status",
+    "actual_schema_profile",
+    "actual_schema_digest",
+    "actual_canonicalization",
+    "actual_canonicalization_digest",
+    "actual_retrieval_policy",
+    "actual_immutability_policy",
+    "actual_semantic_role",
+    "mismatch_code"
   ],
   "properties": {
     "ref_value": { "type": "string" },
@@ -73,6 +81,14 @@
         "AuthorityEmit"
       ]
     },
-    "active_scope_status": { "type": "string" }
+    "active_scope_status": { "type": "string" },
+    "actual_schema_profile": { "type": ["string", "null"] },
+    "actual_schema_digest": { "type": ["string", "null"] },
+    "actual_canonicalization": { "type": ["string", "null"] },
+    "actual_canonicalization_digest": { "type": ["string", "null"] },
+    "actual_retrieval_policy": { "type": ["string", "null"] },
+    "actual_immutability_policy": { "type": ["string", "null"] },
+    "actual_semantic_role": { "type": ["string", "null"] },
+    "mismatch_code": { "type": ["string", "null"] }
   }
 }

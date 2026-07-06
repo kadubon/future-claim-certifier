@@ -313,6 +313,14 @@ class ReferenceLedgerEntry:
     expected_digest: str | None = None
     required_stage: ValidationStage = ValidationStage.AUTHORITY_EMIT
     active_scope_status: str = "not_checked"
+    actual_schema_profile: str | None = None
+    actual_schema_digest: str | None = None
+    actual_canonicalization: str | None = None
+    actual_canonicalization_digest: str | None = None
+    actual_retrieval_policy: str | None = None
+    actual_immutability_policy: str | None = None
+    actual_semantic_role: str | None = None
+    mismatch_code: str | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -331,6 +339,14 @@ class ReferenceLedgerEntry:
             "expected_digest": self.expected_digest,
             "required_stage": self.required_stage.value,
             "active_scope_status": self.active_scope_status,
+            "actual_schema_profile": self.actual_schema_profile,
+            "actual_schema_digest": self.actual_schema_digest,
+            "actual_canonicalization": self.actual_canonicalization,
+            "actual_canonicalization_digest": self.actual_canonicalization_digest,
+            "actual_retrieval_policy": self.actual_retrieval_policy,
+            "actual_immutability_policy": self.actual_immutability_policy,
+            "actual_semantic_role": self.actual_semantic_role,
+            "mismatch_code": self.mismatch_code,
         }
 
 
@@ -723,29 +739,51 @@ def validate_manifest_dependencies(
 
     visiting: set[str] = set()
     visited: set[str] = set()
+    stack: list[str] = []
 
-    def visit(artifact_id: str) -> bool:
+    def admitted_cycle(cycle_ids: tuple[str, ...]) -> bool:
+        if not cycle_ids:
+            return False
+        return any(
+            all(cycle_id in admission for cycle_id in cycle_ids)
+            for admission in fixed_point_admissions
+        )
+
+    def visit(artifact_id: str) -> tuple[bool, tuple[str, ...]]:
         if artifact_id in visiting:
-            return bool(fixed_point_admissions)
+            try:
+                start = stack.index(artifact_id)
+            except ValueError:
+                start = 0
+            cycle_ids = (*stack[start:], artifact_id)
+            return admitted_cycle(cycle_ids), cycle_ids
         if artifact_id in visited:
-            return True
+            return True, ()
         visiting.add(artifact_id)
+        stack.append(artifact_id)
         ref = by_id.get(artifact_id)
         if ref is not None:
             for dep in ref.provenance_refs:
-                if dep in by_id and not visit(dep):
-                    return False
+                if dep in by_id:
+                    ok, cycle_ids = visit(dep)
+                    if not ok:
+                        return False, cycle_ids
+        stack.pop()
         visiting.remove(artifact_id)
         visited.add(artifact_id)
-        return True
+        return True, ()
 
     starts = (root_artifact_id,) if root_artifact_id is not None else tuple(by_id)
     for start in starts:
-        if start in by_id and not visit(start):
+        if start in by_id:
+            ok, cycle_ids = visit(start)
+            if ok:
+                continue
             return validation_failure(
                 FailureCode.ARTIFACT_CONFLICT,
                 ValidationStage.DIGEST_CHECK,
-                "artifact dependency cycle is unsupported without fixed-point admission",
+                "artifact dependency cycle is unsupported without matching fixed-point admission: "
+                + " -> ".join(cycle_ids),
                 status=ValidationStatus.CONFLICT,
                 layer=Layer.INTEROP,
                 source_artifact=start,
@@ -879,7 +917,6 @@ def _expected_semantic_role(kind: ReferenceKind) -> str | None:
         ReferenceKind.SET: ArtifactRole.SET.value,
         ReferenceKind.PROFILE: ArtifactRole.PROFILE.value,
         ReferenceKind.SCHEMA: ArtifactRole.SCHEMA.value,
-        ReferenceKind.PROOF: "proof",
     }
     return role_by_kind.get(kind)
 
@@ -1053,7 +1090,10 @@ def _resolve_ledger_ref(
         semantic_role: str | None,
         resolved_value: Any | None,
         resolved_flag: bool,
+        mismatch_code: FailureCode | None = None,
     ) -> ReferenceLedgerEntry:
+        stored = store.get(artifact_id)
+        actual_ref = stored[0] if stored is not None else None
         return ReferenceLedgerEntry(
             ref_value=ref_value,
             kind=kind,
@@ -1074,6 +1114,18 @@ def _resolve_ledger_ref(
                 resolved_value,
                 context=bundle.reference_context,
             ),
+            actual_schema_profile=actual_ref.schema_profile if actual_ref is not None else None,
+            actual_schema_digest=actual_ref.schema_digest if actual_ref is not None else None,
+            actual_canonicalization=actual_ref.canonicalization if actual_ref is not None else None,
+            actual_canonicalization_digest=(
+                actual_ref.canonicalization_digest if actual_ref is not None else None
+            ),
+            actual_retrieval_policy=actual_ref.retrieval_policy if actual_ref is not None else None,
+            actual_immutability_policy=(
+                actual_ref.immutability_policy if actual_ref is not None else None
+            ),
+            actual_semantic_role=actual_ref.semantic_role if actual_ref is not None else None,
+            mismatch_code=mismatch_code.value if mismatch_code is not None else None,
         )
 
     if artifact_id in store._artifacts:
@@ -1243,6 +1295,23 @@ def _resolve_ledger_ref(
         if isinstance(entry.artifact, Mapping):
             embedded = _embedded_artifact_source(entry.artifact, artifact_id)
             if embedded is not None:
+                if strict:
+                    entries.append(
+                        ledger_entry(
+                            target_digest=None,
+                            semantic_role=None,
+                            resolved_value=None,
+                            resolved_flag=False,
+                        )
+                    )
+                    unresolved.append((artifact_id, pointer))
+                    return _ledger_failure(
+                        FailureCode.MISSING_REF,
+                        "strict replay does not resolve embedded compatibility source: "
+                        f"{ref_value}",
+                        source_artifact=owner_artifact,
+                        source_path=owner_path,
+                    )
                 target_digest = manifest_digest(
                     embedded,
                     artifact_type="embedded-reference-target",
@@ -1258,14 +1327,6 @@ def _resolve_ledger_ref(
                         )
                     )
                     unresolved.append((artifact_id, pointer))
-                    if strict:
-                        return _ledger_failure(
-                            FailureCode.DIGEST_MISMATCH,
-                            f"embedded reference digest mismatch for {ref_value}",
-                            source_artifact=owner_artifact,
-                            source_path=owner_path,
-                            status=ValidationStatus.INVALID_ARTIFACT,
-                        )
                     return None
                 resolved.append(
                     ResolvedReference(

@@ -30,13 +30,15 @@ from dfcc.artifacts import (
     ReferenceLedgerEntry,
     ReferenceResolutionContext,
     ResolvedReference,
-    artifact_bundle_from_json,
     build_artifact_ref,
     build_reference_ledger,
     manifest_digest,
     resolve_reference,
     validate_artifact_ref,
     validate_manifest_dependencies,
+)
+from dfcc.artifacts import (
+    artifact_bundle_from_json as _artifact_bundle_from_json,
 )
 from dfcc.authority import check_authority
 from dfcc.backend import ReferenceChecker
@@ -127,6 +129,65 @@ def _finite_bundle() -> dict[str, object]:
     }
 
 
+def _with_manifest_digest(source: dict[str, Any]) -> dict[str, Any]:
+    manifest = dict(source["manifest"])
+    artifacts = source.get("artifacts", ())
+    if "artifact_refs" not in manifest and isinstance(artifacts, list):
+        refs = [
+            dict(entry["artifact_ref"])
+            for entry in artifacts
+            if isinstance(entry, dict) and isinstance(entry.get("artifact_ref"), dict)
+        ]
+        manifest["artifact_refs"] = refs
+        manifest.setdefault(
+            "dependency_order",
+            [str(ref["artifact_id"]) for ref in refs],
+        )
+    bundle = _artifact_bundle_from_json({**source, "manifest": manifest})
+    identity = {
+        "manifest_id": bundle.manifest.manifest_id,
+        "root_artifact_id": bundle.manifest.root_artifact_id,
+        "artifact_refs": [
+            {
+                "artifact_id": ref.artifact_id,
+                "artifact_type": ref.artifact_type,
+                "digest_value": ref.digest_value,
+                "semantic_role": ref.semantic_role,
+                "schema_profile": ref.schema_profile,
+                "schema_digest": ref.schema_digest,
+                "canonicalization": ref.canonicalization,
+                "canonicalization_digest": ref.canonicalization_digest,
+                "retrieval_policy": ref.retrieval_policy,
+                "immutability_policy": ref.immutability_policy,
+                "provenance_refs": list(ref.provenance_refs),
+                "dependency_labels": list(ref.dependency_labels),
+            }
+            for ref in bundle.manifest.artifact_refs
+        ],
+        "dependency_order": list(bundle.manifest.dependency_order),
+        "semantic_roles": dict(bundle.manifest.semantic_roles),
+        "fixed_point_admissions": list(bundle.manifest.fixed_point_admissions),
+    }
+    manifest["manifest_digest"] = manifest_digest(
+        identity,
+        artifact_type="manifest",
+        schema_profile_digest="DFCC-Interop",
+        dependencies=bundle.manifest.artifact_refs,
+    )
+    return {**source, "manifest": manifest}
+
+
+def artifact_bundle_from_json(source: dict[str, Any]):
+    manifest = source.get("manifest")
+    if (
+        isinstance(manifest, dict)
+        and "manifest_digest" not in manifest
+        and (manifest.get("artifact_refs") or source.get("artifacts"))
+    ):
+        source = _with_manifest_digest(source)
+    return _artifact_bundle_from_json(source)
+
+
 def _artifact_bundle_source(
     artifact: object,
     *,
@@ -144,26 +205,28 @@ def _artifact_bundle_source(
     ref_source = dict(to_jsonable(ref))
     if ref_override:
         ref_source.update(ref_override)
-    return {
-        "bundle_id": "bundle:test",
-        "manifest": {
-            "manifest_id": "manifest:test",
-            "root_artifact_id": ref_source["artifact_id"],
-            "artifact_refs": [ref_source],
-            "dependency_order": [ref_source["artifact_id"]],
-            "semantic_roles": {ref_source["artifact_id"]: role},
-        },
-        "reference_context": {"snapshot_id": "snapshot:test"},
-        "artifacts": [
-            {
-                "artifact_ref": ref_source,
-                "artifact": artifact,
-                "role": role,
-                "schema_name": schema_name,
-                "reason_paths": list(reason_paths),
-            }
-        ],
-    }
+    return _with_manifest_digest(
+        {
+            "bundle_id": "bundle:test",
+            "manifest": {
+                "manifest_id": "manifest:test",
+                "root_artifact_id": ref_source["artifact_id"],
+                "artifact_refs": [ref_source],
+                "dependency_order": [ref_source["artifact_id"]],
+                "semantic_roles": {ref_source["artifact_id"]: role},
+            },
+            "reference_context": {"snapshot_id": "snapshot:test"},
+            "artifacts": [
+                {
+                    "artifact_ref": ref_source,
+                    "artifact": artifact,
+                    "role": role,
+                    "schema_name": schema_name,
+                    "reason_paths": list(reason_paths),
+                }
+            ],
+        }
+    )
 
 
 def _reason_ref_record(
@@ -294,14 +357,14 @@ def _kernel_proof_entries() -> tuple[dict[str, Any], ...]:
 
 def test_artifact_bundle_pipeline_success_and_cli(tmp_path: Path, capsys) -> None:
     source = _artifact_bundle_source({"reason": {"message": "ok"}}, reason_paths=("/reason",))
-    bundle = artifact_bundle_from_json(source)
+    bundle = artifact_bundle_from_json(_with_manifest_digest(source))
     report = validate_pipeline(bundle)
     assert isinstance(report, PipelineReport)
     assert report.passed
     assert report.resolved_refs[0].source_path == "/reason"
 
     bundle_file = tmp_path / "artifact-bundle.json"
-    bundle_file.write_text(json.dumps(source), encoding="utf-8")
+    bundle_file.write_text(json.dumps(_with_manifest_digest(source)), encoding="utf-8")
     assert main(["validate-bundle", str(bundle_file), "--horizon", "1"]) == 0
     output = json.loads(capsys.readouterr().out)
     assert output["stage_results"][-1]["status"] == "pass"
@@ -6353,7 +6416,7 @@ def test_artifact_bundle_full_replay_recomputes_authority_from_accepted_clauses(
         },
         "artifacts": entries,
     }
-    bundle = artifact_bundle_from_json(source)
+    bundle = artifact_bundle_from_json(_with_manifest_digest(source))
 
     report = validate_artifact_bundle(bundle, full_replay=True)
     assert report.passed
@@ -6643,7 +6706,7 @@ def test_artifact_bundle_full_replay_recomputes_authority_from_accepted_clauses(
     assert validate_named_schema(bad_report_json, "pipeline-report.schema.json").passed
 
     bundle_file = tmp_path / "authority-bundle.json"
-    bundle_file.write_text(json.dumps(source), encoding="utf-8")
+    bundle_file.write_text(json.dumps(_with_manifest_digest(source)), encoding="utf-8")
     assert main(["validate-bundle", str(bundle_file), "--horizon", "1", "--full-replay"]) == 0
     cli_output = json.loads(capsys.readouterr().out)
     assert cli_output["replay_trace"]["stage_traces"]
@@ -6853,7 +6916,7 @@ def test_reference_ledger_accepted_clause_and_cli_bundle_replay(
         },
         "artifacts": entries,
     }
-    bundle = artifact_bundle_from_json(source)
+    bundle = artifact_bundle_from_json(_with_manifest_digest(source))
     ledger = build_reference_ledger(bundle, strict=True)
     assert ledger.passed
     assert any(ref.source_artifact == "artifact:transcript" for ref in ledger.resolved_refs)
@@ -6866,7 +6929,7 @@ def test_reference_ledger_accepted_clause_and_cli_bundle_replay(
     assert report.protocol_records
 
     bundle_file = tmp_path / "authority-bundle.json"
-    bundle_file.write_text(json.dumps(source), encoding="utf-8")
+    bundle_file.write_text(json.dumps(_with_manifest_digest(source)), encoding="utf-8")
     assert main(["replay-status", "--bundle", str(bundle_file)]) == 0
     assert "authority_outcome_digest" in capsys.readouterr().out
 
@@ -8036,8 +8099,14 @@ def test_typed_reference_ledger_classifies_required_symbolic_and_embedded_refs()
         }
     )
     embedded_ledger = build_reference_ledger(embedded_bundle, strict=True)
-    assert embedded_ledger.passed
-    assert embedded_ledger.by_kind(ReferenceKind.ARTIFACT)[0].target_artifact_id == "claim:embedded"
+    assert not embedded_ledger.passed
+    assert embedded_ledger.validation_result.failure_records[0].code is FailureCode.MISSING_REF
+    compatibility_embedded_ledger = build_reference_ledger(embedded_bundle, strict=False)
+    assert compatibility_embedded_ledger.passed
+    assert (
+        compatibility_embedded_ledger.by_kind(ReferenceKind.ARTIFACT)[0].target_artifact_id
+        == "claim:embedded"
+    )
 
 
 def test_full_replay_requires_certificate_source_artifacts_and_merges_event_artifacts() -> None:
@@ -9500,11 +9569,8 @@ def test_full_replay_uses_resolved_runtime_over_stale_embedded_sources() -> None
         }
     )
     report = validate_artifact_bundle(bundle, full_replay=True)
-    assert report.authority_view is not None
-    assert report.authority_view.authority_outcome.code == "assert"
-    assert report.authority_runtime_summary is not None
-    assert issued.claim_ref in report.authority_runtime_summary["artifact_refs"]
-    assert any(ref.proof_id == "artifact:kernel-proof" for ref in report.proof_refs)
+    assert report.authority_view is None
+    assert report.final_result.failure_records[0].code is FailureCode.ARTIFACT_CONFLICT
 
 
 def test_strict_full_replay_requires_resolved_kernel_proof_artifact() -> None:

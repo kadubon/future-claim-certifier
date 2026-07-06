@@ -69,6 +69,15 @@ def _certificate_payload(
     policy: Mapping[str, Any],
     kernel_verdict_at_issue: str,
     soundness_grade: int,
+    claim_ref: str,
+    anchor_ref: str,
+    time_basis_ref: str,
+    assumption_bundle_ref: str,
+    compiled_semantics_ref: str,
+    dependency_graph_ref: str,
+    artifact_ref_records: tuple[Mapping[str, Any], ...],
+    obligation_refs: tuple[str, ...],
+    provenance_refs: tuple[str, ...],
 ) -> dict[str, Any]:
     return {
         "claim_source": dict(claim_source),
@@ -79,6 +88,15 @@ def _certificate_payload(
         "policy": dict(policy),
         "kernel_verdict_at_issue": kernel_verdict_at_issue,
         "soundness_grade": soundness_grade,
+        "claim_ref": claim_ref,
+        "anchor_ref": anchor_ref,
+        "time_basis_ref": time_basis_ref,
+        "assumption_bundle_ref": assumption_bundle_ref,
+        "compiled_semantics_ref": compiled_semantics_ref,
+        "dependency_graph_ref": dependency_graph_ref,
+        "artifact_ref_records": tuple(dict(record) for record in artifact_ref_records),
+        "obligation_refs": obligation_refs,
+        "provenance_refs": provenance_refs,
     }
 
 
@@ -158,6 +176,63 @@ def _issue_set_ref_records(
     return tuple(_set_ref_to_json(record) for record in records)
 
 
+def _bundle_manifest_identity(bundle: ArtifactBundle) -> dict[str, Any]:
+    return {
+        "manifest_id": bundle.manifest.manifest_id,
+        "root_artifact_id": bundle.manifest.root_artifact_id,
+        "artifact_refs": [
+            {
+                "artifact_id": ref.artifact_id,
+                "artifact_type": ref.artifact_type,
+                "digest_value": ref.digest_value,
+                "semantic_role": ref.semantic_role,
+                "schema_profile": ref.schema_profile,
+                "schema_digest": ref.schema_digest,
+                "canonicalization": ref.canonicalization,
+                "canonicalization_digest": ref.canonicalization_digest,
+                "retrieval_policy": ref.retrieval_policy,
+                "immutability_policy": ref.immutability_policy,
+                "provenance_refs": list(ref.provenance_refs),
+                "dependency_labels": list(ref.dependency_labels),
+            }
+            for ref in bundle.manifest.artifact_refs
+        ],
+        "dependency_order": list(bundle.manifest.dependency_order),
+        "semantic_roles": dict(bundle.manifest.semantic_roles),
+        "fixed_point_admissions": list(bundle.manifest.fixed_point_admissions),
+    }
+
+
+def _strict_manifest_result(bundle: ArtifactBundle) -> ValidationResult | None:
+    if bundle.manifest.manifest_digest is None:
+        return validation_failure(
+            FailureCode.MISSING_REF,
+            ValidationStage.DIGEST_CHECK,
+            "strict artifact-bundle issuance requires manifest_digest",
+            status=ValidationStatus.UNKNOWN,
+            layer=Layer.INTEROP,
+            source_artifact=bundle.manifest.manifest_id,
+            source_path="/manifest_digest",
+        )
+    actual = manifest_digest(
+        _bundle_manifest_identity(bundle),
+        artifact_type="manifest",
+        schema_profile_digest="DFCC-Interop",
+        dependencies=bundle.manifest.artifact_refs,
+    )
+    if actual != bundle.manifest.manifest_digest:
+        return validation_failure(
+            FailureCode.DIGEST_MISMATCH,
+            ValidationStage.DIGEST_CHECK,
+            "strict artifact-bundle issuance manifest_digest is stale",
+            status=ValidationStatus.INVALID_ARTIFACT,
+            layer=Layer.INTEROP,
+            source_artifact=bundle.manifest.manifest_id,
+            source_path="/manifest_digest",
+        )
+    return None
+
+
 def certify_claim(
     claim_source: Mapping[str, Any],
     bundle_source: Mapping[str, Any],
@@ -170,7 +245,11 @@ def certify_claim(
     checker: DFCCChecker | None = None,
     registry: PredicateRegistry | None = None,
     soundness_grade: int = 3,
+    allow_synthetic_trust: bool = False,
     _include_raw_bundle_trust: bool = True,
+    _assumption_bundle_ref: str | None = None,
+    _extra_artifact_ref_records: tuple[Mapping[str, Any], ...] = (),
+    _extra_obligation_refs: tuple[str, ...] = (),
 ) -> IssueCertificate | ValidationResult:
     """Issue an immutable DFCC certificate for a bounded represented claim."""
 
@@ -210,6 +289,81 @@ def certify_claim(
     residual = build_residual_context(compiled, r=0, p_star=p0, p_out=p0)
     kernel = kernel_verdict(claim, compiled, residual, backend, checker, registry=registry)
 
+    claim_ref = build_artifact_ref(
+        claim_source, artifact_id=f"claim:{claim.claim_id}", artifact_type="claim"
+    )
+    assumption_bundle_ref = _assumption_bundle_ref or f"bundle:{bundle.bundle_id}"
+    bundle_ref = build_artifact_ref(
+        bundle_source, artifact_id=assumption_bundle_ref, artifact_type="bundle"
+    )
+    anchor_ref = build_artifact_ref(
+        anchor.to_json(),
+        artifact_id="anchor:issue",
+        artifact_type="anchor",
+        semantic_role=ArtifactRole.ANCHOR,
+    )
+    time_basis_ref = build_artifact_ref(
+        time_basis_source,
+        artifact_id=str(time_basis_source["clock_id"]),
+        artifact_type="time_basis",
+        semantic_role=ArtifactRole.TIME_BASIS,
+    )
+    frame_ref = build_artifact_ref(
+        frame or {"frame_id": "frame:default"},
+        artifact_id=str(frame.get("frame_id", "frame:default")),
+        artifact_type="assessment_frame",
+        semantic_role="assessment_frame",
+    )
+    compiled_semantics_ref = f"compiled:{bundle.bundle_id}"
+    compiled_ref = build_artifact_ref(
+        to_jsonable(compiled),
+        artifact_id=compiled_semantics_ref,
+        artifact_type="compiled_semantics",
+        semantic_role="compiled_semantics",
+    )
+    dependency_graph_ref = f"dependency-graph:{bundle.bundle_id}"
+    dependency_ref = build_artifact_ref(
+        {"bundle_id": bundle.bundle_id, "edges": list(compiled.dependency_graph)},
+        artifact_id=dependency_graph_ref,
+        artifact_type="dependency_graph",
+        semantic_role=ArtifactRole.DEPENDENCY_GRAPH,
+    )
+    trust = (
+        TrustAssumption.raw_bundle(
+            target=f"compiled:{bundle.bundle_id}", source_artifact=bundle_ref.artifact_id
+        )
+        if allow_synthetic_trust and _include_raw_bundle_trust
+        else None
+    )
+    obligation_refs = tuple(
+        dict.fromkeys(
+            (
+                *bundle.admissions,
+                *_extra_obligation_refs,
+                *((*trust.obligation_refs, trust.assumption_id) if trust is not None else ()),
+            )
+        )
+    )
+    provenance_refs = tuple(str(item) for item in policy.get("provenance_refs", ()))
+    artifact_ref_records = (
+        to_jsonable(claim_ref),
+        to_jsonable(bundle_ref),
+        to_jsonable(anchor_ref),
+        to_jsonable(time_basis_ref),
+        to_jsonable(frame_ref),
+        to_jsonable(compiled_ref),
+        to_jsonable(dependency_ref),
+        *(dict(record) for record in _extra_artifact_ref_records),
+    )
+    artifact_ref_dependencies = (
+        claim_ref,
+        bundle_ref,
+        anchor_ref,
+        time_basis_ref,
+        frame_ref,
+        compiled_ref,
+        dependency_ref,
+    )
     payload = _certificate_payload(
         claim_source=claim_source,
         bundle_source=bundle_source,
@@ -219,26 +373,22 @@ def certify_claim(
         policy=policy,
         kernel_verdict_at_issue=kernel.verdict.value,
         soundness_grade=soundness_grade,
-    )
-    claim_ref = build_artifact_ref(
-        claim_source, artifact_id=f"claim:{claim.claim_id}", artifact_type="claim"
-    )
-    bundle_ref = build_artifact_ref(
-        bundle_source, artifact_id=f"bundle:{bundle.bundle_id}", artifact_type="bundle"
-    )
-    trust = (
-        TrustAssumption.raw_bundle(
-            target=f"compiled:{bundle.bundle_id}", source_artifact=bundle_ref.artifact_id
-        )
-        if _include_raw_bundle_trust
-        else None
+        claim_ref=claim_ref.artifact_id,
+        anchor_ref=anchor_ref.artifact_id,
+        time_basis_ref=time_basis_ref.artifact_id,
+        assumption_bundle_ref=assumption_bundle_ref,
+        compiled_semantics_ref=compiled_semantics_ref,
+        dependency_graph_ref=dependency_graph_ref,
+        artifact_ref_records=artifact_ref_records,
+        obligation_refs=obligation_refs,
+        provenance_refs=provenance_refs,
     )
     schema_digest = claim_ref.schema_digest or "sha256:missing"
     cert_manifest = manifest_digest(
         payload,
         artifact_type="IssueCertificate",
         schema_profile_digest=schema_digest,
-        dependencies=(claim_ref, bundle_ref),
+        dependencies=artifact_ref_dependencies,
     )
     certificate_id = cert_manifest.split(":", 1)[1][:24]
     issue_proof_refs = tuple(ref.proof_id for ref in kernel.proof_refs) or kernel.evidence_refs
@@ -258,33 +408,26 @@ def certify_claim(
         canonicalization_profile_ref=JCS_CANONICALIZATION,
         manifest_digest=cert_manifest,
         claim_ref=claim_ref.artifact_id,
-        anchor_ref="anchor:issue",
-        time_basis_ref=str(time_basis_source["clock_id"]),
+        anchor_ref=anchor_ref.artifact_id,
+        time_basis_ref=time_basis_ref.artifact_id,
         event_order_commitment_ref="event-order:canonical",
-        assessment_frame_ref=str(frame.get("frame_id", "frame:default")),
-        assumption_bundle_ref=bundle_ref.artifact_id,
+        assessment_frame_ref=frame_ref.artifact_id,
+        assumption_bundle_ref=assumption_bundle_ref,
         initial_context_ref="initial-context:r0",
         representation_interface_ref="representation-interface:finite-identity",
         completion_interface_ref=str(
             frame.get("completion_interface_ref", "completion-interface:unspecified")
         ),
-        compiled_semantics_ref=f"compiled:{bundle.bundle_id}",
+        compiled_semantics_ref=compiled_semantics_ref,
         set_refs=tuple(record["carrier_ref"] for record in issue_set_records),
         proof_refs=issue_proof_refs,
         kernel_verdict_at_issue=kernel.verdict,
         soundness_grade=soundness_grade,
-        dependency_graph_ref=f"dependency-graph:{bundle.bundle_id}",
-        artifact_refs=(claim_ref.artifact_id, bundle_ref.artifact_id),
-        artifact_ref_records=(to_jsonable(claim_ref), to_jsonable(bundle_ref)),
-        obligation_refs=tuple(
-            dict.fromkeys(
-                (
-                    *bundle.admissions,
-                    *((*trust.obligation_refs, trust.assumption_id) if trust is not None else ()),
-                )
-            )
-        ),
-        provenance_refs=tuple(str(item) for item in policy.get("provenance_refs", ())),
+        dependency_graph_ref=dependency_graph_ref,
+        artifact_refs=tuple(str(record["artifact_id"]) for record in artifact_ref_records),
+        artifact_ref_records=artifact_ref_records,
+        obligation_refs=obligation_refs,
+        provenance_refs=provenance_refs,
         claim_source=dict(claim_source),
         bundle_source=dict(bundle_source),
         anchor_source=anchor.to_json(),
@@ -367,7 +510,32 @@ def _ledger_ref_problem(
     if entry is None:
         return FailureCode.MISSING_REF
     if expected_kind is not None and entry.kind is not expected_kind:
-        return FailureCode.ARTIFACT_CONFLICT
+        typed_entry = next(
+            (
+                candidate
+                for candidate in entries
+                if candidate.resolved
+                and candidate.kind is expected_kind
+                and candidate.ref_value == ref_value
+            ),
+            None,
+        )
+        if typed_entry is None and isinstance(ref_value, str):
+            artifact_id, _, pointer = ref_value.partition("#")
+            typed_entry = next(
+                (
+                    candidate
+                    for candidate in entries
+                    if candidate.resolved
+                    and candidate.kind is expected_kind
+                    and candidate.target_artifact_id == artifact_id
+                    and (not pointer or candidate.target_path == pointer)
+                ),
+                None,
+            )
+        if typed_entry is None:
+            return FailureCode.ARTIFACT_CONFLICT
+        entry = typed_entry
     if expected_role is not None and entry.semantic_role != expected_role:
         return FailureCode.ARTIFACT_CONFLICT
     return None
@@ -746,6 +914,10 @@ def certify_claim_from_artifact_bundle(
 ) -> IssueCertificate | ValidationResult:
     """Issue from artifact-bundle evidence rather than raw semantic payloads."""
 
+    manifest_result = _strict_manifest_result(bundle)
+    if manifest_result is not None:
+        return manifest_result
+
     claim_source = _first_role_mapping(bundle, ArtifactRole.CLAIM)
     base_bundle = _first_role_mapping(bundle, ArtifactRole.ASSUMPTION_BUNDLE)
     anchor_source = _first_role_mapping(bundle, ArtifactRole.ANCHOR)
@@ -839,6 +1011,17 @@ def certify_claim_from_artifact_bundle(
             dict.fromkeys(item for clause in accepted for item in clause.obligation_refs)
         )
 
+    extra_artifact_ref_records = tuple(to_jsonable(ref) for ref in bundle.manifest.artifact_refs)
+    if accepted:
+        assumption_ref = f"accepted-bundle:{semantic_bundle['bundle_id']}"
+        extra_obligations = tuple(dict.fromkeys((*accepted_obligations, *accepted_clause_ids)))
+    else:
+        assumption_ref = None
+        extra_obligations = tuple(
+            dict.fromkeys(
+                item for trust in trusts for item in (*trust.obligation_refs, trust.assumption_id)
+            )
+        )
     issued = certify_claim(
         claim_source,
         semantic_bundle,
@@ -850,25 +1033,15 @@ def certify_claim_from_artifact_bundle(
         checker=checker,
         registry=registry,
         soundness_grade=soundness_grade,
+        allow_synthetic_trust=False,
         _include_raw_bundle_trust=False,
+        _assumption_bundle_ref=assumption_ref,
+        _extra_artifact_ref_records=extra_artifact_ref_records,
+        _extra_obligation_refs=extra_obligations,
     )
     if isinstance(issued, ValidationResult):
         return issued
-    if accepted:
-        return replace(
-            issued,
-            assumption_bundle_ref=f"accepted-bundle:{semantic_bundle['bundle_id']}",
-            obligation_refs=tuple(dict.fromkeys((*accepted_obligations, *accepted_clause_ids))),
-        )
-    trust_obligations = tuple(
-        dict.fromkeys(
-            item for trust in trusts for item in (*trust.obligation_refs, trust.assumption_id)
-        )
-    )
-    return replace(
-        issued,
-        obligation_refs=tuple(dict.fromkeys((*issued.obligation_refs, *trust_obligations))),
-    )
+    return issued
 
 
 def _decision_from_blocks(

@@ -108,7 +108,32 @@ def _ledger_ref_problem(
     if entry is None:
         return FailureCode.MISSING_REF
     if expected_kind is not None and entry.kind is not expected_kind:
-        return FailureCode.ARTIFACT_CONFLICT
+        typed_entry = next(
+            (
+                candidate
+                for candidate in entries
+                if candidate.resolved
+                and candidate.kind is expected_kind
+                and candidate.ref_value == ref_value
+            ),
+            None,
+        )
+        if typed_entry is None and isinstance(ref_value, str):
+            artifact_id, _, pointer = ref_value.partition("#")
+            typed_entry = next(
+                (
+                    candidate
+                    for candidate in entries
+                    if candidate.resolved
+                    and candidate.kind is expected_kind
+                    and candidate.target_artifact_id == artifact_id
+                    and (not pointer or candidate.target_path == pointer)
+                ),
+                None,
+            )
+        if typed_entry is None:
+            return FailureCode.ARTIFACT_CONFLICT
+        entry = typed_entry
     if expected_role is not None and entry.semantic_role != expected_role:
         return FailureCode.ARTIFACT_CONFLICT
     if expected_digest is not None and entry.target_digest != expected_digest:

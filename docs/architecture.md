@@ -68,6 +68,13 @@ only reproduce legacy represented results when `allow_synthetic_trust=True` is
 passed explicitly. The strict path starts from an `ArtifactBundle` and resolved
 artifact, reason, obligation, proof, set, schema, and profile references.
 
+Strict artifact identity includes the artifact id, artifact type, semantic
+role, digest value, schema identity, canonicalization identity, retrieval
+policy, immutability policy, and manifest digest. JSON is canonicalized with
+RFC8785 JCS; non-finite numbers, float-like status times, leap seconds, and
+sub-microsecond timestamps are rejected or treated as boundary-unknown rather
+than allow-like.
+
 ## Conservative Outcomes
 
 The implementation does not coerce missing information into authority:

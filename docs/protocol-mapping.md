@@ -23,6 +23,15 @@ obligation, schema, or profile rule is never treated as accepted evidence. It
 becomes `missing_ref`, `checker_unknown`, `artifact_conflict`,
 `schema_invalid`, or another typed blocker.
 
+For v1.1 strict replay, authority is emitted only from an `ArtifactBundle`
+whose manifest digest matches its artifact identity. The identity material
+includes artifact type, artifact id, semantic role, digest value, schema
+profile/digest, canonicalization profile/digest, retrieval policy, and
+immutability policy. Raw evidence, embedded source payloads, synthetic trust,
+and unbound proof refs are compatibility or audit material unless an accepted
+clause or explicit trust assumption makes them ledger-valid. The `strict`
+conformance suite fixes these negative cases.
+
 ## Glossary
 
 - Artifact: canonical JSON with a stable digest and role.

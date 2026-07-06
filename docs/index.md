@@ -45,6 +45,7 @@ uv run dfcc check issue.json \
 Use strict artifact replay:
 
 ```bash
+uv run dfcc certify-bundle artifact-bundle.json --out issue.json
 uv run dfcc validate-bundle artifact-bundle.json --full-replay
 uv run dfcc replay-status --bundle artifact-bundle.json
 ```
@@ -57,7 +58,19 @@ Check conformance:
 
 ```bash
 uv run dfcc conformance run --suite primary
+uv run dfcc conformance run --suite strict
 ```
+
+Use `legacy` only when you are checking compatibility behavior for older direct
+API flows:
+
+```bash
+uv run dfcc conformance run --suite legacy
+```
+
+The strict suite is the quickest regression check for the safety boundary:
+raw evidence, stale embedded source, synthetic trust, missing manifest digest,
+and unbound proof refs must not become authority.
 
 ## How To Navigate The Detailed Docs
 

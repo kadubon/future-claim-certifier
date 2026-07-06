@@ -19,9 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      attestations: write
+      id-token: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3
         with:
           enable-cache: true
       - name: Set up Python
@@ -44,6 +46,8 @@ jobs:
         run: uv run python -m dfcc.cli conformance run --suite primary
       - name: Legacy conformance
         run: uv run python -m dfcc.cli conformance run --suite legacy
+      - name: Strict conformance
+        run: uv run python -m dfcc.cli conformance run --suite strict
       - name: Build distributions
         run: uv build
       - name: Remove build helper files
@@ -100,6 +104,15 @@ jobs:
           PY
       - name: Check distribution metadata
         run: uvx twine check dist/*.whl dist/*.tar.gz
+      - name: Generate release checksums and dependency inventory
+        run: |
+          mkdir -p release-assets
+          sha256sum dist/*.whl dist/*.tar.gz > release-assets/SHA256SUMS.txt
+          uv run python -m pip list --format=json > release-assets/python-dependencies.json
+      - name: Generate GitHub artifact attestations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh attestation sign dist/*.whl dist/*.tar.gz --repo "$GITHUB_REPOSITORY"
       - name: Upload distributions
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -107,6 +120,12 @@ jobs:
           path: |
             dist/*.whl
             dist/*.tar.gz
+          if-no-files-found: error
+      - name: Upload release assets
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-assets
+          path: release-assets/*
           if-no-files-found: error
 
   publish:
@@ -117,7 +136,7 @@ jobs:
       id-token: write
     steps:
       - name: Download distributions
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: python-distributions
           path: dist
@@ -132,14 +151,20 @@ jobs:
       contents: write
     steps:
       - name: Download distributions
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: python-distributions
           path: dist
+      - name: Download release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: release-assets
+          path: release-assets
       - name: Create release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b
         with:
           files: |
             dist/*.whl
             dist/*.tar.gz
+            release-assets/*
           generate_release_notes: true

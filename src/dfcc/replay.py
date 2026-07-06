@@ -1517,6 +1517,17 @@ def _certificate_from_bundle(
         for field_name, artifact_id in source_refs:
             artifact = _artifact_by_id(bundle, artifact_id)
             if artifact is not None:
+                embedded = getattr(certificate, field_name)
+                if strict_sources and digest_json(embedded) != digest_json(artifact):
+                    return validation_failure(
+                        FailureCode.ARTIFACT_CONFLICT,
+                        ValidationStage.AUTHORITY_EMIT,
+                        f"certificate embedded {field_name} conflicts with artifact {artifact_id}",
+                        status=ValidationStatus.CONFLICT,
+                        layer=Layer.INTEROP,
+                        source_artifact=artifact_id,
+                        source_path=f"/{field_name}",
+                    )
                 replacements[field_name] = artifact
             elif strict_sources:
                 return _missing(
@@ -1733,7 +1744,32 @@ def _ledger_ref_problem(
     if entry is None:
         return FailureCode.MISSING_REF
     if expected_kind is not None and entry.kind is not expected_kind:
-        return FailureCode.ARTIFACT_CONFLICT
+        typed_entry = next(
+            (
+                candidate
+                for candidate in entries
+                if candidate.resolved
+                and candidate.kind is expected_kind
+                and candidate.ref_value == ref_value
+            ),
+            None,
+        )
+        if typed_entry is None and isinstance(ref_value, str):
+            artifact_id, _, pointer = ref_value.partition("#")
+            typed_entry = next(
+                (
+                    candidate
+                    for candidate in entries
+                    if candidate.resolved
+                    and candidate.kind is expected_kind
+                    and candidate.target_artifact_id == artifact_id
+                    and (not pointer or candidate.target_path == pointer)
+                ),
+                None,
+            )
+        if typed_entry is None:
+            return FailureCode.ARTIFACT_CONFLICT
+        entry = typed_entry
     if expected_role is not None and entry.semantic_role != expected_role:
         return FailureCode.ARTIFACT_CONFLICT
     return None

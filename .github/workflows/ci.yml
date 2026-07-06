@@ -23,8 +23,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3
         with:
           enable-cache: true
       - name: Set up Python
@@ -43,6 +43,8 @@ jobs:
         run: uv run python -m dfcc.cli conformance run --suite primary
       - name: Legacy conformance
         run: uv run python -m dfcc.cli conformance run --suite legacy
+      - name: Strict conformance
+        run: uv run python -m dfcc.cli conformance run --suite strict
       - name: Bandit
         run: uv run bandit -c pyproject.toml -r src
       - name: Pip audit
@@ -58,8 +60,78 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: github/codeql-action/init@411c4c9a36b3fca4d674f06b6396b2c6d23522c6
         with:
           languages: python
       - uses: github/codeql-action/analyze@411c4c9a36b3fca4d674f06b6396b2c6d23522c6
+
+  package-audit:
+    name: Release archive inspection
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3
+        with:
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: uv sync --locked --all-groups --python 3.11
+      - name: Build distributions
+        run: uv build
+      - name: Inspect release archives
+        run: |
+          python - <<'PY'
+          import re
+          import tarfile
+          import zipfile
+          from pathlib import Path
+
+          token_name = "PYPI_" + "TO" + "KEN"
+          private_key = "BEGIN " + "PRIVATE " + "KEY"
+          windows_home = "C:" + "\\\\" + "Users" + "\\\\"
+          linux_home = "/" + "home" + "/"
+          mac_home = "/" + "Users" + "/"
+          forbidden_name = re.compile(r"(__pycache__|\.pyc$|(^|/)coverage\.xml$|(^|/)\.coverage$)")
+          forbidden_content = re.compile(
+              r"("
+              + re.escape(windows_home)
+              + "|"
+              + re.escape(linux_home)
+              + "|"
+              + re.escape(mac_home)
+              + "|"
+              + re.escape(token_name)
+              + "|"
+              + re.escape(private_key)
+              + ")"
+          )
+          for path in Path("dist").glob("*"):
+              names = []
+              payloads = []
+              if path.suffix == ".whl":
+                  with zipfile.ZipFile(path) as zf:
+                      names = zf.namelist()
+                      payloads = [
+                          zf.read(name).decode("utf-8", "ignore")
+                          for name in names
+                          if name.endswith((".py", ".md", ".txt", ".toml", ".yaml", ".yml", ".json"))
+                      ]
+              elif path.suffixes[-2:] == [".tar", ".gz"]:
+                  with tarfile.open(path) as tf:
+                      names = tf.getnames()
+                      for member in tf.getmembers():
+                          if member.isfile() and member.name.endswith((".py", ".md", ".txt", ".toml", ".yaml", ".yml", ".json")):
+                              stream = tf.extractfile(member)
+                              if stream is not None:
+                                  payloads.append(stream.read().decode("utf-8", "ignore"))
+              else:
+                  continue
+              if any(forbidden_name.search(name) for name in names):
+                  raise SystemExit(f"release archive contains forbidden generated file: {path}")
+              if forbidden_content.search("\n".join(payloads)):
+                  raise SystemExit(f"release archive contains forbidden local or secret material: {path}")
+          PY

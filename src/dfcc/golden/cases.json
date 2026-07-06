@@ -2,6 +2,7 @@
   {
     "case_id": "primary-full-replay-missing-authority-artifacts",
     "kind": "artifact-bundle",
+    "strict": true,
     "expected": "missing_ref",
     "expected_digest": "sha256:2db420126616f33558a3875697fcde79b968fbf80b99c8fcb4371b8eb8d9844f",
     "bundle": {
@@ -71,6 +72,7 @@
     "case_id": "primary-full-replay-canonicalization-mismatch",
     "kind": "artifact-bundle",
     "fixture": "interop:canonicalization-mismatch",
+    "strict": true,
     "expected": "canonicalization_mismatch",
     "expected_digest": "sha256:a24e89eeabbf1178109942ae93b84e93ecc8806eb78a5a6847c29bdcf376b25b"
   },
@@ -78,6 +80,7 @@
     "case_id": "primary-full-replay-schema-invalid",
     "kind": "artifact-bundle",
     "fixture": "interop:schema-invalid",
+    "strict": true,
     "expected": "schema_invalid",
     "expected_digest": "sha256:a9b75fc5aa813a1e13534d5432e74194bdea8effa8d1adf0c6f805636230b88f"
   },
@@ -85,6 +88,7 @@
     "case_id": "primary-full-replay-digest-mismatch",
     "kind": "artifact-bundle",
     "fixture": "interop:digest-mismatch",
+    "strict": true,
     "expected": "digest_mismatch",
     "expected_digest": "sha256:5d8134efe7b4cdac0e3fd829175de2b531b5e1e500b0a95dcd8ddf29c716629b"
   },
@@ -92,6 +96,7 @@
     "case_id": "primary-full-replay-missing-ref",
     "kind": "artifact-bundle",
     "fixture": "interop:missing-ref",
+    "strict": true,
     "expected": "missing_ref",
     "expected_digest": "sha256:5e75eda0658c2c3aacd351d437eda5fa69d835d6ec6d84afcc43978ed2136956"
   },
@@ -99,57 +104,62 @@
     "case_id": "primary-full-replay-missing-kernel-proof",
     "kind": "artifact-bundle",
     "fixture": "authority:missing-kernel-proof",
+    "strict": true,
     "expected": "unknown|checker_unknown",
-    "expected_digest": "sha256:9bfcf492c0237dcb50ef34a05aec4689078e8ca2172c55d557433b1862b4db8d"
+    "expected_digest": "sha256:861369884634fb6c16885aadbf7e2bfa3bbe7eaf55c80f56310c3fe799858df1"
   },
   {
     "case_id": "primary-full-replay-stale-embedded-source",
     "kind": "artifact-bundle",
     "fixture": "authority:stale-embedded-source",
-    "expected": "assert|",
-    "expected_digest": "sha256:64eabd2c569dc911017556cec77072776f09447695ea8701001483bccb7de95e"
+    "strict": true,
+    "expected": "artifact_conflict",
+    "expected_digest": "sha256:f3214c973698e057de7e069e47d211c69a21af71bee149e9cf76da28ceb006f6"
   },
   {
     "case_id": "primary-full-replay-raw-evidence-only",
     "kind": "artifact-bundle",
     "fixture": "authority:raw-evidence-only",
-    "expected": "assert|",
-    "expected_digest": "sha256:52970fffcb2b4c0201fd43300e2625c287cb516877ea32abeb1d2a70ee3f9dcd"
+    "strict": true,
+    "expected": "unknown|checker_unknown",
+    "expected_digest": "sha256:c950bbd042de844c3968e41ca689e18ec22800a1f4ccfed9be96142b9b6ef40d"
   },
   {
     "case_id": "primary-full-replay-operational-accept",
     "kind": "artifact-bundle",
     "fixture": "authority:operational-accept",
+    "strict": true,
     "expected": "accept|",
-    "expected_digest": "sha256:c346cae46982360bf8e378ce75ba73dc3318ba2c43c2eb5c633a213c058b1d54"
+    "expected_digest": "sha256:0e1f8054dc8443bef8adb3fb4251e92f9abcbdd5b9f9caa3abb640679cae4f28"
   },
   {
     "case_id": "primary-full-replay-operational-reject",
     "kind": "artifact-bundle",
     "fixture": "authority:operational-reject",
+    "strict": true,
     "expected": "reject|",
-    "expected_digest": "sha256:431c5efd151ea56e49dbf13136b29789d5de52e9f64c1de15460768cb53ec703"
+    "expected_digest": "sha256:c8046db73ba61959f1cac156f51b5cf0f18ce800b8668dcdccbec2dda44ee518"
   },
   {
     "case_id": "primary-full-replay-operational-agreement-mismatch",
     "kind": "artifact-bundle",
     "fixture": "authority:operational-agreement-mismatch",
     "expected": "unknown|artifact_conflict",
-    "expected_digest": "sha256:af530e47a6142107cde8d3f97dd18edf9e674f6cda1739527781b7894870769c"
+    "expected_digest": "sha256:ecb7a5864bc0f24f553e1d24583e86e7aa59e22b323d67a0ba4aac01ae5ea4e8"
   },
   {
     "case_id": "primary-full-replay-missing-completion-proof",
     "kind": "artifact-bundle",
     "fixture": "authority:missing-completion-proof",
     "expected": "unknown|checker_unknown",
-    "expected_digest": "sha256:bc117e52103952aa22e4356239974280c80848a82bda066e1b667235b1e296a8"
+    "expected_digest": "sha256:aef9868c495fa1d1b40d7b7b0ab581090926cb595e9263116f5b3441bc572f51"
   },
   {
     "case_id": "primary-full-replay-accepted-clause-provenance",
     "kind": "artifact-bundle",
     "fixture": "authority:accepted-clause-provenance",
     "expected": "assert|",
-    "expected_digest": "sha256:37358fcba957f5f8fb2fbdaa04efa4d749c3e79527654039e6898c53446b4213"
+    "expected_digest": "sha256:a433ab03c2631cfb55fc16d300651b09a6d3eac555894df31850ec689c169d8d"
   },
   {
     "case_id": "primary-full-replay-accepted-clause-target-mismatch",
@@ -162,36 +172,40 @@
     "case_id": "primary-full-replay-policy-block",
     "kind": "artifact-bundle",
     "fixture": "authority:policy-block",
+    "strict": true,
     "expected": "block|policy_block",
-    "expected_digest": "sha256:1f64e3cfd8529bcced239b2cde48108e8dfc15cd73ce842f15014d533dc0dbd8"
+    "expected_digest": "sha256:ad6847ed43ba5ee64dfc1c25d48582d506703398627c863559ff37e0ac905351"
   },
   {
     "case_id": "primary-full-replay-expired-clock",
     "kind": "artifact-bundle",
     "fixture": "authority:expired-clock",
+    "strict": true,
     "expected": "expired|expired",
-    "expected_digest": "sha256:bc66f4b74ce9ea027ed2737233c6dbc2d690148d4de5f697ba2d78a4f6e94819"
+    "expected_digest": "sha256:a091cd2193739a357bf9c0fd025815b1c0591d097726b6f66b30ac7559ce8821"
   },
   {
     "case_id": "primary-full-replay-boundary-unknown-clock",
     "kind": "artifact-bundle",
     "fixture": "authority:boundary-unknown-clock",
+    "strict": true,
     "expected": "unknown|clock_boundary_unknown",
-    "expected_digest": "sha256:555dd5d32bc58cf016fb63c9c8a0606019257c4fc6ddd0f4b6988696d76190ea"
+    "expected_digest": "sha256:0d38ffee6e16ac988cdea8d835eca8decff27b9823b5ae469f1748e0d095e081"
   },
   {
     "case_id": "primary-full-replay-conflicting-traces",
     "kind": "artifact-bundle",
     "fixture": "authority:conflicting-traces",
+    "strict": true,
     "expected": "conflict|trace_conflict",
-    "expected_digest": "sha256:ad90018a8be1583471d3572bfd6371259b1a5bb53e8b5e6d113e82369c075ca0"
+    "expected_digest": "sha256:59c360b77dae214b6fa532780b5b18ecb21dfaff9897d5252f5fbe3065e4700d"
   },
   {
     "case_id": "primary-full-replay-missing-confluence-proof",
     "kind": "artifact-bundle",
     "fixture": "authority:missing-confluence-proof",
     "expected": "missing_ref",
-    "expected_digest": "sha256:dfff17f287f7750c193e6f924e8542e83d5e2c6ce08949206d148435e96239e1"
+    "expected_digest": "sha256:1532f90bd3f914fc4143d29d365f25e44b3df2179ac1c6872d3ea924738d8003"
   },
   {
     "case_id": "primary-full-replay-manifest-order-conflict",
@@ -247,7 +261,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "conflict|trace_conflict",
-    "expected_digest": "sha256:41acb5d2ec1c4f092ff82eae53073ef9f530d961e8fe022e2f3dc543197e1dcf",
+    "expected_digest": "sha256:102ce53ce195ead366c8bd4da7f645f2598405cd20b66caff73469ee30ccb0aa",
     "proposed_use": {
       "mode": "assertion",
       "claim": "safe-temp",
@@ -279,7 +293,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|exact_prefix_empty",
-    "expected_digest": "sha256:c4115fce3d46ea6fdfe2c964b363128a39763bdbd3628251239747a6edfaf60d",
+    "expected_digest": "sha256:d3555d5f85ade5327876b66f057da530b0fc86991ab6ab0948256f642469c1cf",
     "proposed_use": {
       "mode": "assertion",
       "claim": "safe-temp",
@@ -307,7 +321,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|completion_missing",
-    "expected_digest": "sha256:a93b365347b282a16c923b1109b6a1d38ee7448a46c2e6d34874b34286c50e30",
+    "expected_digest": "sha256:9d768bfb69b9ba76c75b0cec52553530bc455ae41bd352b09007864fbf5bb455",
     "proposed_use": {
       "mode": "operational",
       "claim": "safe-temp",
@@ -323,7 +337,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "block|policy_block",
-    "expected_digest": "sha256:33b39b97c2608b28a042d60871bc276f33e5aec8ba13f92365801218bdcfa5f9",
+    "expected_digest": "sha256:69c1bea5769e9fdc7b57dc9e206f00d1d1282bd950a5c34ffbe4624be16f13e2",
     "policy": {
       "blocked_modes": [
         "assertion"
@@ -344,7 +358,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "expired|expired",
-    "expected_digest": "sha256:d0ec5f2601fcbd9d344b8c7e7a1252bf13802804fc81856d8e87dab247a20bca",
+    "expected_digest": "sha256:4302eedc92d6fca157bff11b02c0e0a4bf782a1335a436ef587645f87c0dc1f2",
     "proposed_use": {
       "mode": "assertion",
       "claim": "safe-temp",
@@ -360,7 +374,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|clock_boundary_unknown",
-    "expected_digest": "sha256:34b494004c5bec4984581f6ce47ed19881ac2c3db9ebbf95703813b15bb46126",
+    "expected_digest": "sha256:28b2dbab50108c9687ec9af0c2e94c0b5879e3b4833e49f2867a37119f8893d5",
     "boundary_uncertainty": 2,
     "proposed_use": {
       "mode": "assertion",
@@ -377,7 +391,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|checker_unknown",
-    "expected_digest": "sha256:b6727e1b05bcb69d76a236e3fe38d3a5be45b11b5b4a3cf48307264b5ca5a5fd",
+    "expected_digest": "sha256:9a5e190384ddd4765f5f0230d9ebfae9dd4de0a0877a7c3c5a7172ebf360fbdf",
     "policy": {
       "adequacy_direction": "positive"
     },
@@ -463,7 +477,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|checker_unknown",
-    "expected_digest": "sha256:38087dc46ec0222d11756bb9e7332e695a6551926d83a6bffd4932fd04a3789a",
+    "expected_digest": "sha256:72343a12478027fa6ecddff09263fe50991324619485308682ec02c4b603cf4d",
     "unsafe_claim": true,
     "policy": {
       "adequacy_direction": "negative"
@@ -550,7 +564,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "out_of_frame|out_of_frame",
-    "expected_digest": "sha256:bb4119dde538c4f0a9e253b0c685b190fed1063c3060c99391d7f55e249de014",
+    "expected_digest": "sha256:f0e3848bbf68c000d69f2ef3504c32661eadd9978940baecdf32b9367d9ecd76",
     "proposed_use": {
       "mode": "assertion",
       "claim": "safe-temp",

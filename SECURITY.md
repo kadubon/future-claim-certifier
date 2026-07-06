@@ -29,6 +29,11 @@ intact:
 - treat raw evidence as audit-only unless admission succeeds;
 - treat direct dictionary/dataclass authority inputs as synthetic trust unless
   `allow_synthetic_trust=True` is deliberately used for compatibility;
+- require strict artifact-bundle replay, including manifest digest, schema
+  digest, canonicalization digest, semantic role, retrieval policy, and
+  immutability policy, before an outcome is used as authority;
+- reject raw evidence as authority unless it becomes an accepted clause or an
+  explicit trust assumption with ledger-resolved reasons and obligations;
 - require accepted checker evidence for proof-dependent decisions;
 - use offline or allow-listed retrieval policies for high-integrity runs. The
   default engine does not perform network artifact retrieval;
@@ -57,10 +62,13 @@ Before publishing, run the commands in [docs/release-checklist.md](docs/release-
 - static checks and tests;
 - bandit and pip-audit;
 - primary and legacy conformance suites;
+- strict conformance suite;
 - local path and secret scans;
 - wheel and source distribution archive inspection;
 - Trusted Publishing workflow verification.
 - GitHub Actions SHA pinning and CODEOWNERS review coverage.
+- checksum, dependency inventory, and GitHub artifact attestation checks for
+  release artifacts.
 
 PyPI publishing uses GitHub Actions Trusted Publishing. The release workflow
 must not contain PyPI usernames, passwords, or API tokens.

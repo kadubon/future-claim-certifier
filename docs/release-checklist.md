@@ -27,6 +27,7 @@ uv run bandit -c pyproject.toml -r src
 uv run pip-audit --skip-editable
 uv run python -m dfcc.cli conformance run --suite primary
 uv run python -m dfcc.cli conformance run --suite legacy
+uv run python -m dfcc.cli conformance run --suite strict
 uv build
 Remove-Item -Force dist/.gitignore -ErrorAction SilentlyContinue
 uvx twine check dist/*.whl dist/*.tar.gz
@@ -98,6 +99,18 @@ for path in Path("dist").glob("*"):
 The release workflow is `.github/workflows/workflow.yml`. It publishes to PyPI
 through Trusted Publishing and does not use a long-lived PyPI token.
 
+Before tagging, confirm repository protection:
+
+- `main` requires CI, CodeQL, conformance, package audit, and GitGuardian checks.
+- release tags are created only after a green `main`;
+- GitHub Actions are pinned by full commit SHA;
+- PyPI publishing uses Trusted Publishing with `id-token: write`;
+- no default network artifact retrieval has been added to the package.
+
+The workflow creates wheel/source distributions, inspects archives, runs
+primary/legacy/strict conformance, writes `SHA256SUMS.txt`, writes a dependency
+inventory, and signs GitHub artifact attestations before PyPI publish.
+
 Required PyPI Trusted Publisher settings:
 
 - Project: `future-claim-certifier`
@@ -121,11 +134,14 @@ python -m venv .release-smoke
 .release-smoke/Scripts/python -m pip install --upgrade pip
 .release-smoke/Scripts/python -m pip install future-claim-certifier==<version>
 .release-smoke/Scripts/dfcc conformance run --suite primary
+.release-smoke/Scripts/dfcc conformance run --suite strict
 ```
 
 Also verify:
 
 - GitHub release exists and has artifacts attached.
+- GitHub release includes checksums and dependency inventory.
+- GitHub artifact attestations exist for the wheel and source distribution.
 - PyPI project page exists.
 - `pip install future-claim-certifier==<version>` installs package `dfcc`.
 - The project homepage points to the DOI.

@@ -16,7 +16,15 @@ from dfcc.artifacts import (
 )
 from dfcc.backend import ReferenceChecker, ResidualContext
 from dfcc.bundle import compile_bundle, parse_bundle
-from dfcc.claims import compile_claim
+from dfcc.claims import (
+    ClaimCompileError,
+    PredicateRegistry,
+    compile_claim,
+    default_predicate_registry,
+    evaluate_formula,
+    field_cmp,
+    state_in,
+)
 from dfcc.cli import main
 from dfcc.frame import (
     adjudication_views,
@@ -95,6 +103,84 @@ def _completion_pass_policy() -> dict[str, object]:
         "checker_result": "pass",
         "checker_transcript_ref": "artifact:completion-transcript",
     }
+
+
+def test_claim_language_temporal_paths_and_input_errors() -> None:
+    registry = default_predicate_registry()
+    eventual = compile_claim(
+        {
+            "claim_id": "eventual-temp",
+            "horizon": 2,
+            "formula": {
+                "op": "F",
+                "a": 0,
+                "b": 2,
+                "child": {
+                    "op": "atom",
+                    "name": "field_eq",
+                    "args": {"field": "temp", "value": "75"},
+                },
+            },
+        },
+        registry,
+    )
+    assert eventual.satisfies(({"temp": "70"}, {"temp": "75"}, {"temp": "80"}), registry)
+    assert not eventual.satisfies(({"temp": "70"},), registry)
+    until = {
+        "op": "U",
+        "a": 1,
+        "b": 2,
+        "left": {"op": "atom", "name": "true"},
+        "right": {
+            "op": "atom",
+            "name": "field_cmp",
+            "args": {"field": "temp", "op": "gt", "value": "74"},
+        },
+    }
+    assert evaluate_formula(until, ({"temp": "70"}, {"temp": "75"}, {"temp": "80"}), 0, 2, registry)
+
+    empty_registry = PredicateRegistry()
+    with pytest.raises(ValueError, match="predicate name"):
+        empty_registry.register("", lambda *_args: True)
+    with pytest.raises(ClaimCompileError, match="unknown predicate"):
+        empty_registry.get("missing")
+    assert registry.names == ("false", "field_cmp", "field_eq", "state_in", "true")
+    assert field_cmp({"temp": "70"}, (), 0, {"field": "temp", "op": "eq", "value": "70"})
+    assert field_cmp({"temp": "70"}, (), 0, {"field": "temp", "op": "ne", "value": "80"})
+    assert state_in({"temp": "70"}, (), 0, {"values": [{"temp": "70"}]})
+
+    invalid_claims: tuple[dict[str, object], ...] = (
+        {"claim_id": "", "horizon": 1, "formula": {"op": "atom", "name": "true"}},
+        {"claim_id": "bad", "horizon": -1, "formula": {"op": "atom", "name": "true"}},
+        {"claim_id": "bad", "horizon": 1, "formula": []},
+        {"claim_id": "bad", "horizon": 1, "formula": {"op": "atom", "name": 1}},
+        {
+            "claim_id": "bad",
+            "horizon": 1,
+            "formula": {"op": "atom", "name": "true", "args": []},
+        },
+        {"claim_id": "bad", "horizon": 1, "formula": {"op": "and", "children": []}},
+        {"claim_id": "bad", "horizon": 1, "formula": {"op": "or", "children": [1]}},
+        {
+            "claim_id": "bad",
+            "horizon": 1,
+            "formula": {"op": "G", "a": 2, "b": 1, "child": {"op": "atom", "name": "true"}},
+        },
+        {"claim_id": "bad", "horizon": 1, "formula": {"op": "not", "child": []}},
+        {"claim_id": "bad", "horizon": 1, "formula": {"op": "U", "a": 0, "b": 1}},
+        {"claim_id": "bad", "horizon": 1, "formula": {"op": "xor"}},
+    )
+    for source in invalid_claims:
+        with pytest.raises(ClaimCompileError):
+            compile_claim(source, registry)
+    with pytest.raises(ValueError, match="unknown comparison"):
+        field_cmp({"temp": "70"}, (), 0, {"field": "temp", "op": "bad", "value": "70"})
+    with pytest.raises(ValueError, match="decimal-compatible"):
+        field_cmp({"temp": object()}, (), 0, {"field": "temp", "op": "eq", "value": "70"})
+    with pytest.raises(ValueError, match="values"):
+        state_in({"temp": "70"}, (), 0, {"values": "not-a-list"})
+    with pytest.raises(ClaimCompileError, match="unknown formula"):
+        evaluate_formula({"op": "xor"}, ({"temp": "70"},), 0, 0, registry)
 
 
 def test_validation_pipeline_artifact_reference_and_field_failures() -> None:

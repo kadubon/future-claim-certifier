@@ -12,7 +12,7 @@ from dfcc.artifacts import artifact_bundle_from_json
 from dfcc.authority import check_authority
 from dfcc.bundle import compile_bundle, parse_bundle
 from dfcc.canonical import digest_json
-from dfcc.certificate import certify_claim
+from dfcc.certificate import certify_claim, certify_claim_from_artifact_bundle
 from dfcc.conformance import run_golden_cases
 from dfcc.models import IssueCertificate
 from dfcc.schema import list_schemas, load_schema, validate_named_schema
@@ -57,6 +57,17 @@ def _cmd_certify(args: argparse.Namespace) -> int:
         frame=spec.get("frame"),
         policy=spec.get("policy"),
         soundness_grade=int(spec.get("soundness_grade", 3)),
+        allow_synthetic_trust=bool(args.allow_synthetic_trust),
+    )
+    _write_json(Path(args.out) if args.out else None, result)
+    return 0 if not isinstance(result, ValidationResult) or result.passed else 1
+
+
+def _cmd_certify_bundle(args: argparse.Namespace) -> int:
+    value = _read_json(Path(args.bundle))
+    result = certify_claim_from_artifact_bundle(
+        artifact_bundle_from_json(value),
+        status_time=args.status_time,
     )
     _write_json(Path(args.out) if args.out else None, result)
     return 0 if not isinstance(result, ValidationResult) or result.passed else 1
@@ -67,7 +78,12 @@ def _cmd_check(args: argparse.Namespace) -> int:
     proposed_use = _read_json(Path(args.proposed_use))
     status_context = _read_json(Path(args.status_context))
     certificate = IssueCertificate.from_json(cert_source)
-    result = check_authority(certificate, proposed_use, status_context)
+    result = check_authority(
+        certificate,
+        proposed_use,
+        status_context,
+        allow_synthetic_trust=bool(getattr(args, "allow_synthetic_trust", False)),
+    )
     _write_json(Path(args.out) if args.out else None, result)
     return 0 if not isinstance(result, ValidationResult) or result.passed else 1
 
@@ -156,16 +172,41 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--out")
     validate.set_defaults(func=_cmd_validate)
 
-    certify = sub.add_parser("certify", help="issue a DFCC certificate from a JSON spec")
+    certify = sub.add_parser(
+        "certify",
+        help=(
+            "issue a legacy-compatible DFCC certificate from a direct JSON spec; "
+            "use certify-bundle for strict artifact-bundle issuance"
+        ),
+    )
     certify.add_argument("spec")
     certify.add_argument("--out")
+    certify.add_argument(
+        "--allow-synthetic-trust",
+        action="store_true",
+        help="legacy compatibility only: admit the direct raw bundle as synthetic trust",
+    )
     certify.set_defaults(func=_cmd_certify)
+
+    certify_bundle = sub.add_parser(
+        "certify-bundle",
+        help="issue a DFCC certificate from strict artifact-bundle accepted evidence",
+    )
+    certify_bundle.add_argument("bundle")
+    certify_bundle.add_argument("--status-time")
+    certify_bundle.add_argument("--out")
+    certify_bundle.set_defaults(func=_cmd_certify_bundle)
 
     check = sub.add_parser("check", help="recompute status-time authority")
     check.add_argument("certificate")
     check.add_argument("proposed_use")
     check.add_argument("status_context")
     check.add_argument("--out")
+    check.add_argument(
+        "--allow-synthetic-trust",
+        action="store_true",
+        help="legacy compatibility only: allow direct synthetic trust to authorize",
+    )
     check.set_defaults(func=_cmd_check)
 
     validate_bundle = sub.add_parser(
