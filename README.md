@@ -49,7 +49,7 @@ dfcc conformance run --suite primary
 For local development:
 
 ```bash
-uv sync --all-groups
+uv sync --locked --all-groups
 uv run dfcc conformance run --suite primary
 ```
 
@@ -103,15 +103,16 @@ uv run dfcc conformance run --suite legacy
 ## Python Example
 
 ```python
-from dfcc import check_authority
-from dfcc.certificate import certify_claim, certify_claim_from_artifact_bundle
+from dfcc.certificate import certify_claim_from_artifact_bundle
+from dfcc.validation import validate_artifact_bundle
 
-certificate = certify_claim(claim, bundle, anchor, time_basis)
-view = check_authority(certificate, proposed_use, status_context)
+report = validate_artifact_bundle(artifact_bundle, full_replay=True)
+view = report.authority_view
 
-outcome = view.authority_outcome
-if outcome.code == "assert" and not outcome.blocking_set:
+if view is not None and view.authority_outcome.code == "assert" and not view.blocking_set:
     use_claim_as_represented_authority()
+else:
+    inspect_blocking_records(report.final_result)
 ```
 
 For strict artifact-bundle issuance, use:
@@ -122,6 +123,25 @@ certificate = certify_claim_from_artifact_bundle(artifact_bundle)
 
 The strict path uses accepted clauses or explicit trust assumptions. Raw
 evidence is audit data only and cannot silently change the certified semantics.
+
+The direct convenience API is retained for migration and local examples:
+
+```python
+from dfcc import check_authority
+from dfcc.certificate import certify_claim
+
+certificate = certify_claim(claim, bundle, anchor, time_basis)
+view = check_authority(
+    certificate,
+    proposed_use,
+    status_context,
+    allow_synthetic_trust=True,
+)
+```
+
+Without `allow_synthetic_trust=True`, direct inputs are normalized as synthetic
+trust and return a blocking `unknown` result instead of represented `assert` or
+`deny`, or operational `accept` or `reject`.
 
 ## Reading Outcomes
 
@@ -142,6 +162,11 @@ Common results:
 - `out_of_frame`: the requested use is outside the certified frame.
 - `conflict`: artifacts, lifecycle traces, or proof records disagree.
 - `policy_block`: the protocol result exists, but policy does not allow use.
+- `checker_unknown`: proof, checker, admission, or synthetic-trust evidence is
+  missing or not accepted.
+- `missing_ref`, `digest_mismatch`, `schema_invalid`, `artifact_conflict`:
+  strict replay stopped before authority because artifact evidence did not
+  resolve cleanly.
 
 For non-allowing outcomes, inspect `blocking_records`, `failure_records`, and
 typed `reason_ref_records`. They identify the artifact digest and JSON Pointer

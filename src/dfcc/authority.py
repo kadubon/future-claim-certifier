@@ -108,6 +108,7 @@ def _runtime(
     kernel_proof_artifacts: tuple[Any, ...] = (),
     strict_replay: bool = False,
     synthetic_trust: bool = False,
+    allow_synthetic_trust: bool = False,
 ) -> ResolvedAuthorityRuntime:
     registry = registry or default_predicate_registry()
     claim = compile_claim(certificate.claim_source, registry)
@@ -142,6 +143,7 @@ def _runtime(
         kernel_proof_artifacts=kernel_proof_artifacts,
         strict_replay=strict_replay,
         synthetic_trust=synthetic_trust,
+        allow_synthetic_trust=allow_synthetic_trust,
     )
 
 
@@ -1202,6 +1204,35 @@ def _check_authority_core(
     guard_records: list[GuardRecord] = list(
         _identity_guards(certificate, proposed_use, runtime.claim, effective_policy)
     )
+    if runtime.synthetic_trust and not runtime.allow_synthetic_trust:
+        block = blocking_record(
+            FailureCode.CHECKER_UNKNOWN,
+            Layer.INTEROP,
+            "legacy direct authority input is synthetic trust and cannot authorize without "
+            "allow_synthetic_trust=True",
+            source_artifact="artifact:synthetic-authority-input",
+            source_path="/",
+        )
+        guard_records.append(
+            guard_record(
+                "SyntheticTrustExplicit",
+                False,
+                failure_code=FailureCode.CHECKER_UNKNOWN,
+                layer=Layer.INTEROP,
+                message="synthetic trust compatibility mode was not explicitly allowed",
+                reason_refs=block.reason_refs,
+            )
+        )
+        return _status_outcome(
+            certificate,
+            proposed_use,
+            validation,
+            StatusCode.UNKNOWN,
+            (block,),
+            reason_refs=block.reason_refs,
+            guard_records=tuple(guard_records),
+            runtime=runtime,
+        )
     identity_blocks = _guard_blocks(tuple(guard_records))
     if identity_blocks:
         reason_refs = tuple(ref for block in identity_blocks for ref in block.reason_refs)
@@ -1690,6 +1721,7 @@ def check_authority(
     backend: DFCCBackend | None = None,
     checker: DFCCChecker | None = None,
     registry: PredicateRegistry | None = None,
+    allow_synthetic_trust: bool = False,
 ) -> StatusAuthorityView | ValidationResult:
     """Public authority entrypoint.
 
@@ -1709,6 +1741,7 @@ def check_authority(
             backend=backend,
             checker=checker,
             registry=registry,
+            allow_synthetic_trust=allow_synthetic_trust,
         )
         return (
             replay.authority_view if replay.authority_view is not None else replay.validation_result
@@ -1725,6 +1758,7 @@ def check_authority(
             backend=backend,
             checker=checker,
             registry=registry,
+            allow_synthetic_trust=allow_synthetic_trust,
         )
         return (
             replay.authority_view if replay.authority_view is not None else replay.validation_result
@@ -1739,6 +1773,7 @@ def check_authority(
             backend=backend,
             checker=checker,
             registry=registry,
+            allow_synthetic_trust=allow_synthetic_trust,
         )
         return (
             replay.authority_view if replay.authority_view is not None else replay.validation_result
@@ -1751,5 +1786,6 @@ def check_authority(
         backend=backend,
         checker=checker,
         registry=registry,
+        allow_synthetic_trust=allow_synthetic_trust,
     )
     return replay.authority_view if replay.authority_view is not None else replay.validation_result

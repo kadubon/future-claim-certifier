@@ -62,9 +62,11 @@ claim + assumptions + time basis
         -> authority outcome + reasons
 ```
 
-Direct dictionary inputs are accepted for compatibility, but the public
-authority path normalizes them into a synthetic bundle before checking. The
-strict path starts from an `ArtifactBundle` and resolved references.
+Direct dictionary inputs are accepted for compatibility, but they are synthetic
+trust. By default they produce a blocking `unknown` authority view. They can
+only reproduce legacy represented results when `allow_synthetic_trust=True` is
+passed explicitly. The strict path starts from an `ArtifactBundle` and resolved
+artifact, reason, obligation, proof, set, schema, and profile references.
 
 ## Conservative Outcomes
 
@@ -72,6 +74,7 @@ The implementation does not coerce missing information into authority:
 
 - validation failures stop before authority emission;
 - raw evidence is audit-only unless admitted into accepted clauses;
+- direct raw bundles carry a trust obligation and are not strict authority;
 - expired or boundary-unknown clocks block represented and operational use;
 - lifecycle trace disagreement becomes `trace_conflict` unless a confluence
   proof is resolved;
@@ -86,4 +89,3 @@ The implementation does not coerce missing information into authority:
 - Add signature verification through the lifecycle signature verifier boundary.
 - Add new artifact profiles by extending schemas and profile rules without
   letting unknown extensions affect semantics by default.
-

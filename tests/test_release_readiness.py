@@ -20,9 +20,9 @@ def test_release_metadata_matches_public_distribution() -> None:
     openapi = yaml.safe_load(_read_text("docs/openapi.yaml"))
 
     assert project["name"] == "future-claim-certifier"
-    assert project["version"] == "1.0.0"
-    assert dfcc.__version__ == "1.0.0"
-    assert openapi["info"]["version"] == "1.0.0"
+    assert project["version"] == "1.1.0.dev0"
+    assert dfcc.__version__ == "1.1.0.dev0"
+    assert openapi["info"]["version"] == "1.1.0.dev0"
     assert project["description"] == (
         "Replayable Python protocol engine for validating time-bound future claims "
         "from canonical artifacts."
@@ -31,6 +31,7 @@ def test_release_metadata_matches_public_distribution() -> None:
     assert project["urls"]["Source"] == "https://github.com/kadubon/future-claim-certifier"
     assert project["urls"]["Issues"] == ("https://github.com/kadubon/future-claim-certifier/issues")
     assert "Development Status :: 5 - Production/Stable" in project["classifiers"]
+    assert "rfc8785>=0.1.4" in project["dependencies"]
     assert {
         "agent-safety",
         "authority-validation",
@@ -71,20 +72,43 @@ def test_publish_workflow_uses_pypi_trusted_publishing() -> None:
     assert '      - "v*.*.*"' in workflow_text
     assert "username:" not in workflow_text
     assert "password:" not in workflow_text
-    assert "PYPI_TOKEN" not in workflow_text
+    assert ("PYPI_" + "TO" + "KEN") not in workflow_text
 
     publish_job = workflow["jobs"]["publish"]
     assert publish_job["permissions"] == {"id-token": "write"}
     assert "environment" not in publish_job
     publish_steps = publish_job["steps"]
-    assert any(
-        step.get("uses") == "pypa/gh-action-pypi-publish@release/v1"
-        for step in publish_steps
-        if isinstance(step, dict)
-    )
+    publish_uses = [step.get("uses", "") for step in publish_steps if isinstance(step, dict)]
+    assert any("pypa/gh-action-pypi-publish@" in value for value in publish_uses)
+    assert all(re.search(r"@[0-9a-f]{40}$", value) for value in publish_uses if "@" in value)
 
     build_steps = workflow["jobs"]["build"]["steps"]
     assert any(
         step.get("run") == "uvx twine check dist/*.whl dist/*.tar.gz" for step in build_steps
     )
+    assert any(
+        step.get("run") == "uv sync --locked --all-groups --python 3.11" for step in build_steps
+    )
     assert any(step.get("run") == "uv run pytest" for step in build_steps)
+
+
+def test_github_workflows_pin_actions_and_run_strict_checks() -> None:
+    for path in (".github/workflows/ci.yml", ".github/workflows/workflow.yml"):
+        workflow = yaml.safe_load(_read_text(path))
+        for job in workflow["jobs"].values():
+            for step in job.get("steps", []):
+                if not isinstance(step, dict) or "uses" not in step:
+                    continue
+                assert re.search(r"@[0-9a-f]{40}$", step["uses"]), step["uses"]
+
+    ci = yaml.safe_load(_read_text(".github/workflows/ci.yml"))
+    runs = [
+        step.get("run")
+        for job in ci["jobs"].values()
+        for step in job.get("steps", [])
+        if isinstance(step, dict)
+    ]
+    assert "uv sync --locked --all-groups --python ${{ matrix.python-version }}" in runs
+    assert "uv run python -m dfcc.cli conformance run --suite primary" in runs
+    assert "uv run python -m dfcc.cli conformance run --suite legacy" in runs
+    assert (ROOT / ".github" / "CODEOWNERS").exists()

@@ -762,8 +762,29 @@ def manifest_digest(
     dependencies: tuple[ArtifactRef, ...] = (),
     algorithm: str = "sha256",
 ) -> str:
+    def dependency_identity(ref: ArtifactRef) -> dict[str, Any]:
+        return {
+            "artifact_type": ref.artifact_type,
+            "artifact_id": ref.artifact_id,
+            "semantic_role": ref.semantic_role,
+            "digest_value": ref.digest_value,
+            "schema_profile": ref.schema_profile,
+            "schema_digest": ref.schema_digest,
+            "canonicalization": ref.canonicalization,
+            "canonicalization_digest": ref.canonicalization_digest,
+        }
+
     ordered = tuple(
-        sorted(ref.digest_value or "" for ref in dependencies if ref.digest_value is not None)
+        dependency_identity(ref)
+        for ref in sorted(
+            dependencies,
+            key=lambda item: (
+                item.artifact_type,
+                item.artifact_id,
+                item.semantic_role or "",
+                item.digest_value or "",
+            ),
+        )
     )
     return compute_manifest_digest(
         artifact,

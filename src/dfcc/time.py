@@ -16,6 +16,30 @@ class TimeBasisError(ValueError):
     """Raised when a time basis or anchor is malformed."""
 
 
+_MICROSECONDS_PER_SECOND = Decimal(1_000_000)
+
+
+def _decimal_seconds(value: Decimal | int | str, *, field_name: str) -> Decimal:
+    if isinstance(value, (bool, float)):
+        raise TimeBasisError(f"{field_name} must be an exact decimal string or integer")
+    try:
+        seconds = value if isinstance(value, Decimal) else Decimal(str(value))
+    except Exception as exc:
+        raise TimeBasisError(f"{field_name} must be a finite decimal") from exc
+    if not seconds.is_finite():
+        raise TimeBasisError(f"{field_name} must be finite")
+    return seconds
+
+
+def _duration_from_seconds(value: Decimal | int | str, *, field_name: str) -> timedelta:
+    seconds = _decimal_seconds(value, field_name=field_name)
+    micros = seconds * _MICROSECONDS_PER_SECOND
+    integral_micros = micros.to_integral_value()
+    if micros != integral_micros:
+        raise TimeBasisError(f"{field_name} is finer than microsecond resolution")
+    return timedelta(microseconds=int(integral_micros))
+
+
 def parse_rfc3339(value: str) -> datetime:
     text = value
     if text.endswith("Z"):
@@ -41,10 +65,10 @@ class TimeBasis:
     timestamp_policy: str | None = None
 
     def uncertainty_interval(self, status_time: datetime) -> tuple[datetime, datetime]:
-        uncertainty = Decimal(str(self.uncertainty_seconds))
+        uncertainty = _decimal_seconds(self.uncertainty_seconds, field_name="uncertainty_seconds")
         if uncertainty < 0:
             raise TimeBasisError("uncertainty_seconds must be nonnegative")
-        delta = timedelta(seconds=float(uncertainty))
+        delta = _duration_from_seconds(uncertainty, field_name="uncertainty_seconds")
         center = status_time.astimezone(UTC)
         return center - delta, center + delta
 
@@ -72,10 +96,12 @@ class HorizonAnchor:
             return cls.from_times(anchors)
         issue_time = parse_rfc3339(str(source["issue_time"]))
         horizon = int(source["horizon"])
-        step_seconds = float(source["step_seconds"])
-        anchors = tuple(
-            issue_time + timedelta(seconds=step_seconds * index) for index in range(horizon + 1)
-        )
+        if horizon < 0:
+            raise TimeBasisError("horizon must be nonnegative")
+        step = _duration_from_seconds(source["step_seconds"], field_name="step_seconds")
+        if step <= timedelta(0):
+            raise TimeBasisError("step_seconds must be positive")
+        anchors = tuple(issue_time + step * index for index in range(horizon + 1))
         return cls.from_times(anchors)
 
     def end(self) -> datetime:

@@ -87,6 +87,7 @@ class ResolvedAuthorityRuntime:
     stage_blockers: tuple[BlockingRecord, ...] = ()
     strict_replay: bool = False
     synthetic_trust: bool = False
+    allow_synthetic_trust: bool = False
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -123,4 +124,5 @@ class ResolvedAuthorityRuntime:
             "kernel_proof_artifacts": [proof.artifact_id for proof in self.kernel_proof_artifacts],
             "strict_replay": self.strict_replay,
             "synthetic_trust": self.synthetic_trust,
+            "allow_synthetic_trust": self.allow_synthetic_trust,
         }

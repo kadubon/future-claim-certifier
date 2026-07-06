@@ -170,6 +170,7 @@ def certify_claim(
     checker: DFCCChecker | None = None,
     registry: PredicateRegistry | None = None,
     soundness_grade: int = 3,
+    _include_raw_bundle_trust: bool = True,
 ) -> IssueCertificate | ValidationResult:
     """Issue an immutable DFCC certificate for a bounded represented claim."""
 
@@ -225,8 +226,12 @@ def certify_claim(
     bundle_ref = build_artifact_ref(
         bundle_source, artifact_id=f"bundle:{bundle.bundle_id}", artifact_type="bundle"
     )
-    trust = TrustAssumption.raw_bundle(
-        target=f"compiled:{bundle.bundle_id}", source_artifact=bundle_ref.artifact_id
+    trust = (
+        TrustAssumption.raw_bundle(
+            target=f"compiled:{bundle.bundle_id}", source_artifact=bundle_ref.artifact_id
+        )
+        if _include_raw_bundle_trust
+        else None
     )
     schema_digest = claim_ref.schema_digest or "sha256:missing"
     cert_manifest = manifest_digest(
@@ -272,7 +277,12 @@ def certify_claim(
         artifact_refs=(claim_ref.artifact_id, bundle_ref.artifact_id),
         artifact_ref_records=(to_jsonable(claim_ref), to_jsonable(bundle_ref)),
         obligation_refs=tuple(
-            dict.fromkeys((*bundle.admissions, *trust.obligation_refs, trust.assumption_id))
+            dict.fromkeys(
+                (
+                    *bundle.admissions,
+                    *((*trust.obligation_refs, trust.assumption_id) if trust is not None else ()),
+                )
+            )
         ),
         provenance_refs=tuple(str(item) for item in policy.get("provenance_refs", ())),
         claim_source=dict(claim_source),
@@ -840,6 +850,7 @@ def certify_claim_from_artifact_bundle(
         checker=checker,
         registry=registry,
         soundness_grade=soundness_grade,
+        _include_raw_bundle_trust=False,
     )
     if isinstance(issued, ValidationResult):
         return issued

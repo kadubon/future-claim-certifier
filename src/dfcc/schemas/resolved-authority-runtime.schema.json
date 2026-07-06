@@ -31,7 +31,8 @@
     "proof_ref_records",
     "kernel_proof_artifacts",
     "strict_replay",
-    "synthetic_trust"
+    "synthetic_trust",
+    "allow_synthetic_trust"
   ],
   "properties": {
     "compiled_bundle_ref": { "type": ["string", "null"] },
@@ -63,6 +64,7 @@
     },
     "kernel_proof_artifacts": { "type": "array", "items": { "type": "string" } },
     "strict_replay": { "type": "boolean" },
-    "synthetic_trust": { "type": "boolean" }
+    "synthetic_trust": { "type": "boolean" },
+    "allow_synthetic_trust": { "type": "boolean" }
   }
 }

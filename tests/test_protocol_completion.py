@@ -2075,6 +2075,40 @@ def test_checker_contract_evidence_paths() -> None:
         .code
         is FailureCode.DIGEST_MISMATCH
     )
+    same_digest_different_id = ArtifactRef(
+        "artifact:y",
+        "json",
+        digest_value=ref.digest_value,
+        semantic_role=ref.semantic_role,
+        schema_digest=ref.schema_digest,
+        canonicalization_digest=ref.canonicalization_digest,
+    )
+    same_digest_different_role = ArtifactRef(
+        ref.artifact_id,
+        ref.artifact_type,
+        digest_value=ref.digest_value,
+        semantic_role="reason",
+        schema_digest=ref.schema_digest,
+        canonicalization_digest=ref.canonicalization_digest,
+    )
+    assert (
+        manifest_digest(
+            body,
+            artifact_type="manifest",
+            schema_profile_digest="profile",
+            dependencies=(same_digest_different_id,),
+        )
+        != expected
+    )
+    assert (
+        manifest_digest(
+            body,
+            artifact_type="manifest",
+            schema_profile_digest="profile",
+            dependencies=(same_digest_different_role,),
+        )
+        != expected
+    )
 
     store = ArtifactStore()
     store.add(ref, {"x": 1})
@@ -6183,6 +6217,7 @@ def test_operational_authority_reconstructs_from_observation_records() -> None:
                 "checker_transcript_ref": "artifact:completion-transcript",
             },
         },
+        allow_synthetic_trust=True,
     )
     assert not isinstance(result, type(validate_artifact_ref(ArtifactRef("x", "json"))))
     assert result.authority_outcome.code == OperationalCode.ACCEPT.value
@@ -9157,9 +9192,14 @@ def test_direct_dict_authority_uses_synthetic_bundle_and_profile_field_policy() 
     assert synthetic.manifest.root_artifact_id == "synthetic:certificate"
     direct = check_authority(to_jsonable(issued), proposed, status)
     assert not isinstance(direct, type(validate_artifact_ref(ArtifactRef("x", "json"))))
-    assert direct.authority_outcome.code == "assert"
+    assert direct.authority_outcome.code == "unknown"
+    assert direct.authority_outcome.blocking_set
     assert "trust-assumption:synthetic-authority-input" in direct.obligation_refs
     assert any(ref.reason_id == "reason:synthetic-authority-input" for ref in direct.reason_refs)
+    allowed_direct = check_authority(
+        to_jsonable(issued), proposed, status, allow_synthetic_trust=True
+    )
+    assert allowed_direct.authority_outcome.code == "assert"
     direct_profile = direct.minimum_profile()
     assert "trust-assumption:synthetic-authority-input" in direct_profile["obligation_refs"]
     assert any(
@@ -11631,6 +11671,7 @@ def test_kernel_view_exposes_typed_proof_metadata() -> None:
             "scope": ["demo"],
         },
         {"status_time": "2026-01-01T00:00:00Z"},
+        allow_synthetic_trust=True,
     )
     assert not isinstance(result, type(validate_artifact_ref(ArtifactRef("x", "json"))))
     assert result.proof_refs
@@ -11703,6 +11744,7 @@ def test_kernel_view_exposes_typed_proof_metadata() -> None:
             "scope": ["demo"],
         },
         {"status_time": "2026-01-01T00:00:00Z"},
+        allow_synthetic_trust=True,
     )
     assert deny_result.authority_outcome.code == "deny"
     deny_profile = deny_result.minimum_profile()

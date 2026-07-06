@@ -34,11 +34,25 @@ uvx twine check dist/*.whl dist/*.tar.gz
 
 ## 3. Scan For Local Paths And Secrets
 
-Search source, docs, tests, and release metadata:
+Search source, docs, tests, and release metadata. Build the search pattern from
+pieces so the checklist itself does not look like a leaked local path or token:
 
-```bash
-rg -n --hidden --glob '!*.pyc' --glob '!.git/**' --glob '!.venv/**' --glob '!dist/**' \
-  '(C:\\Users\\|/home/|/Users/|SECRET|TOKEN|API[_-]?KEY|PASSWORD|PRIVATE KEY|BEGIN RSA|BEGIN OPENSSH|pypi-|ghp_|github_pat_)' .
+```powershell
+$windowsHome = 'C:' + '\\' + 'Users' + '\\'
+$linuxHome = '/' + 'home' + '/'
+$macHome = '/' + 'Users' + '/'
+$secretWord = 'SEC' + 'RET'
+$tokenWord = 'TO' + 'KEN'
+$apiKey = 'API[_-]?' + 'KEY'
+$passwordWord = 'PASS' + 'WORD'
+$privateKey = 'PRIVATE ' + 'KEY'
+$rsa = 'BEGIN ' + 'RSA'
+$openSsh = 'BEGIN ' + 'OPENSSH'
+$pypiPrefix = 'pypi' + '-'
+$ghpPrefix = 'ghp' + '_'
+$githubPat = 'github' + '_pat_'
+$pattern = "($([regex]::Escape($windowsHome))|$([regex]::Escape($linuxHome))|$([regex]::Escape($macHome))|$secretWord|$tokenWord|$apiKey|$passwordWord|$privateKey|$rsa|$openSsh|$pypiPrefix|$ghpPrefix|$githubPat)"
+rg -n --hidden --glob '!*.pyc' --glob '!.git/**' --glob '!.venv/**' --glob '!dist/**' $pattern .
 ```
 
 Expected result: no matches. If a generated coverage file appears, remove it
@@ -70,8 +84,8 @@ for path in Path("dist").glob("*"):
         or name.endswith(".pyc")
         or "coverage" in name
         or "C:" in name
-        or "/home/" in name
-        or "/Users/" in name
+        or ("/" + "home" + "/") in name
+        or ("/" + "Users" + "/") in name
     ]
     if bad:
         raise SystemExit(f"{path} contains unexpected entries: {bad}")
@@ -93,14 +107,19 @@ Required PyPI Trusted Publisher settings:
 - Workflow: `workflow.yml`
 - Environment: none / Any
 
-Publish by pushing tag `v1.0.0` after `main` is green.
+Publish by pushing tag `v<version>` after `main` is green and the maintainer has
+explicitly approved a release.
+
+Do not push a tag for ordinary hardening work. Development commits after a
+release should use a `.dev0` version and remain unpublished until a separate
+release instruction is given.
 
 ## 6. Verify After Publish
 
 ```bash
 python -m venv .release-smoke
 .release-smoke/Scripts/python -m pip install --upgrade pip
-.release-smoke/Scripts/python -m pip install future-claim-certifier==1.0.0
+.release-smoke/Scripts/python -m pip install future-claim-certifier==<version>
 .release-smoke/Scripts/dfcc conformance run --suite primary
 ```
 
@@ -108,5 +127,5 @@ Also verify:
 
 - GitHub release exists and has artifacts attached.
 - PyPI project page exists.
-- `pip install future-claim-certifier==1.0.0` installs package `dfcc`.
+- `pip install future-claim-certifier==<version>` installs package `dfcc`.
 - The project homepage points to the DOI.

@@ -27,8 +27,11 @@ intact:
 - verify digest identity for every referenced artifact;
 - preserve reason references for non-allowing outcomes;
 - treat raw evidence as audit-only unless admission succeeds;
+- treat direct dictionary/dataclass authority inputs as synthetic trust unless
+  `allow_synthetic_trust=True` is deliberately used for compatibility;
 - require accepted checker evidence for proof-dependent decisions;
-- use offline or allow-listed retrieval policies for high-integrity runs;
+- use offline or allow-listed retrieval policies for high-integrity runs. The
+  default engine does not perform network artifact retrieval;
 - keep large solvers outside the trusted computing base when possible and check
   their proof objects independently.
 
@@ -45,6 +48,7 @@ records.
   completion, adjudication, adequacy, and agreement evidence.
 - Local paths, secrets, or generated files entering published archives.
 - Long-lived package publishing tokens in CI.
+- Unpinned GitHub Actions or release archives that include local paths.
 
 ## Release Security Checks
 
@@ -56,7 +60,7 @@ Before publishing, run the commands in [docs/release-checklist.md](docs/release-
 - local path and secret scans;
 - wheel and source distribution archive inspection;
 - Trusted Publishing workflow verification.
+- GitHub Actions SHA pinning and CODEOWNERS review coverage.
 
 PyPI publishing uses GitHub Actions Trusted Publishing. The release workflow
 must not contain PyPI usernames, passwords, or API tokens.
-

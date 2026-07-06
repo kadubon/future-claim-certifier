@@ -989,10 +989,12 @@ validation emits a compile summary. `dfcc replay-status --bundle` runs full
 artifact-bundle replay and emits the same `PipelineReport.replay_trace`; the
 three-file form remains available for compatibility.
 Direct dict/dataclass `check_authority` compatibility is normalized through a
-synthetic artifact bundle. That path is non-strict for backwards compatibility,
-but the returned `StatusAuthorityView` records
+synthetic artifact bundle. That path is non-strict and non-authoritative by
+default: without `allow_synthetic_trust=True`, it returns a blocking
+`checker_unknown` view instead of represented `assert`/`deny` or operational
+`accept`/`reject`. Compatibility results still record
 `trust-assumption:synthetic-authority-input` and a typed
-`reason:synthetic-authority-input` reason ref so callers can distinguish it
+`reason:synthetic-authority-input` reason ref so callers can distinguish them
 from strict artifact-bundle replay.
 `PipelineReport` and standalone `ValidationResult` JSON emit typed
 `FailureRecord` and `ReasonRef` records. Non-pass validation results require

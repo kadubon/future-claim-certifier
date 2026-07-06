@@ -100,56 +100,56 @@
     "kind": "artifact-bundle",
     "fixture": "authority:missing-kernel-proof",
     "expected": "unknown|checker_unknown",
-    "expected_digest": "sha256:605a5e68130de1df361cdbb2b2b15fb74e8c77eb47f761c0448dbcaf7ae07383"
+    "expected_digest": "sha256:9bfcf492c0237dcb50ef34a05aec4689078e8ca2172c55d557433b1862b4db8d"
   },
   {
     "case_id": "primary-full-replay-stale-embedded-source",
     "kind": "artifact-bundle",
     "fixture": "authority:stale-embedded-source",
     "expected": "assert|",
-    "expected_digest": "sha256:f7def05a75f2f2dd76b4a0e64198ad350b1ad8cb5ad481a53ac26dbfd29bf550"
+    "expected_digest": "sha256:64eabd2c569dc911017556cec77072776f09447695ea8701001483bccb7de95e"
   },
   {
     "case_id": "primary-full-replay-raw-evidence-only",
     "kind": "artifact-bundle",
     "fixture": "authority:raw-evidence-only",
     "expected": "assert|",
-    "expected_digest": "sha256:5a63e0686b36713deffb14ed89dce7914d8ccc234c91725624a0f75cfd40e271"
+    "expected_digest": "sha256:52970fffcb2b4c0201fd43300e2625c287cb516877ea32abeb1d2a70ee3f9dcd"
   },
   {
     "case_id": "primary-full-replay-operational-accept",
     "kind": "artifact-bundle",
     "fixture": "authority:operational-accept",
     "expected": "accept|",
-    "expected_digest": "sha256:7b9b3fcfa4638d3538cdf13f04e1887b935f185285cb710befd700f9e8c52435"
+    "expected_digest": "sha256:c346cae46982360bf8e378ce75ba73dc3318ba2c43c2eb5c633a213c058b1d54"
   },
   {
     "case_id": "primary-full-replay-operational-reject",
     "kind": "artifact-bundle",
     "fixture": "authority:operational-reject",
     "expected": "reject|",
-    "expected_digest": "sha256:385ca9c9877e61bcd933c2755d3f35a986d0508e3dda827c5f4f68227e3e13cf"
+    "expected_digest": "sha256:431c5efd151ea56e49dbf13136b29789d5de52e9f64c1de15460768cb53ec703"
   },
   {
     "case_id": "primary-full-replay-operational-agreement-mismatch",
     "kind": "artifact-bundle",
     "fixture": "authority:operational-agreement-mismatch",
     "expected": "unknown|artifact_conflict",
-    "expected_digest": "sha256:384942045da05130169792ba8518b8e8a001c9b9bcd187f2395bfc8d0a7abefd"
+    "expected_digest": "sha256:af530e47a6142107cde8d3f97dd18edf9e674f6cda1739527781b7894870769c"
   },
   {
     "case_id": "primary-full-replay-missing-completion-proof",
     "kind": "artifact-bundle",
     "fixture": "authority:missing-completion-proof",
     "expected": "unknown|checker_unknown",
-    "expected_digest": "sha256:20c6ca27d8defa66a0105bb226709ff9e1e7ec70bbf5421fede19916568e9023"
+    "expected_digest": "sha256:bc117e52103952aa22e4356239974280c80848a82bda066e1b667235b1e296a8"
   },
   {
     "case_id": "primary-full-replay-accepted-clause-provenance",
     "kind": "artifact-bundle",
     "fixture": "authority:accepted-clause-provenance",
     "expected": "assert|",
-    "expected_digest": "sha256:542f27cfd063d830b0af3bc666119ac42280562e1d133497aac749848bf4fa5f"
+    "expected_digest": "sha256:37358fcba957f5f8fb2fbdaa04efa4d749c3e79527654039e6898c53446b4213"
   },
   {
     "case_id": "primary-full-replay-accepted-clause-target-mismatch",
@@ -163,35 +163,35 @@
     "kind": "artifact-bundle",
     "fixture": "authority:policy-block",
     "expected": "block|policy_block",
-    "expected_digest": "sha256:ae4802067ee4c41970b04335fdf126fc0284805996ef65a8e570d2d7e7e17310"
+    "expected_digest": "sha256:1f64e3cfd8529bcced239b2cde48108e8dfc15cd73ce842f15014d533dc0dbd8"
   },
   {
     "case_id": "primary-full-replay-expired-clock",
     "kind": "artifact-bundle",
     "fixture": "authority:expired-clock",
     "expected": "expired|expired",
-    "expected_digest": "sha256:1c0284b87590ee3c44b29018ac83c651f80dffcb47caa80d40d7ef2d21603829"
+    "expected_digest": "sha256:bc66f4b74ce9ea027ed2737233c6dbc2d690148d4de5f697ba2d78a4f6e94819"
   },
   {
     "case_id": "primary-full-replay-boundary-unknown-clock",
     "kind": "artifact-bundle",
     "fixture": "authority:boundary-unknown-clock",
     "expected": "unknown|clock_boundary_unknown",
-    "expected_digest": "sha256:07f3d08c28bce60083dea3a1b5b26109c07042d0831337dd7b1317362d05c6c8"
+    "expected_digest": "sha256:555dd5d32bc58cf016fb63c9c8a0606019257c4fc6ddd0f4b6988696d76190ea"
   },
   {
     "case_id": "primary-full-replay-conflicting-traces",
     "kind": "artifact-bundle",
     "fixture": "authority:conflicting-traces",
     "expected": "conflict|trace_conflict",
-    "expected_digest": "sha256:d652e6b90631573961d319b86692f37bd2ee6e9eb547b58906c3f57795f10097"
+    "expected_digest": "sha256:ad90018a8be1583471d3572bfd6371259b1a5bb53e8b5e6d113e82369c075ca0"
   },
   {
     "case_id": "primary-full-replay-missing-confluence-proof",
     "kind": "artifact-bundle",
     "fixture": "authority:missing-confluence-proof",
     "expected": "missing_ref",
-    "expected_digest": "sha256:84471949f7d295f374bb4f6a38ec0c7bd0982e12569207d99cb241dc83a88bab"
+    "expected_digest": "sha256:dfff17f287f7750c193e6f924e8542e83d5e2c6ce08949206d148435e96239e1"
   },
   {
     "case_id": "primary-full-replay-manifest-order-conflict",
@@ -247,7 +247,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "conflict|trace_conflict",
-    "expected_digest": "sha256:ed2cbe98eca29028e5b0657b40f67cad1e34842dffdbf4f72c4293f11c01a0ce",
+    "expected_digest": "sha256:41acb5d2ec1c4f092ff82eae53073ef9f530d961e8fe022e2f3dc543197e1dcf",
     "proposed_use": {
       "mode": "assertion",
       "claim": "safe-temp",
@@ -279,7 +279,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|exact_prefix_empty",
-    "expected_digest": "sha256:66ad6fc75600653310fa1805351d664f1ab7c189ba500873ddfef90ccded2e0f",
+    "expected_digest": "sha256:c4115fce3d46ea6fdfe2c964b363128a39763bdbd3628251239747a6edfaf60d",
     "proposed_use": {
       "mode": "assertion",
       "claim": "safe-temp",
@@ -307,7 +307,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|completion_missing",
-    "expected_digest": "sha256:6f39ccb9ff56208c7b71e1f1cdf175d04a65da8493a8f65e7a29741fba760792",
+    "expected_digest": "sha256:a93b365347b282a16c923b1109b6a1d38ee7448a46c2e6d34874b34286c50e30",
     "proposed_use": {
       "mode": "operational",
       "claim": "safe-temp",
@@ -323,7 +323,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "block|policy_block",
-    "expected_digest": "sha256:72840a88d23969ed75f8f23c972765f475491cf94d142e1187abef5780635e91",
+    "expected_digest": "sha256:33b39b97c2608b28a042d60871bc276f33e5aec8ba13f92365801218bdcfa5f9",
     "policy": {
       "blocked_modes": [
         "assertion"
@@ -344,7 +344,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "expired|expired",
-    "expected_digest": "sha256:bc0a7b781b3aa570820a04c8a030267921715aa6cfb6e79effeb36f2402891a6",
+    "expected_digest": "sha256:d0ec5f2601fcbd9d344b8c7e7a1252bf13802804fc81856d8e87dab247a20bca",
     "proposed_use": {
       "mode": "assertion",
       "claim": "safe-temp",
@@ -360,7 +360,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|clock_boundary_unknown",
-    "expected_digest": "sha256:d91d834328702fad935dcafb9f89699b48e37fd750b90785d66fd76866541c46",
+    "expected_digest": "sha256:34b494004c5bec4984581f6ce47ed19881ac2c3db9ebbf95703813b15bb46126",
     "boundary_uncertainty": 2,
     "proposed_use": {
       "mode": "assertion",
@@ -377,7 +377,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|checker_unknown",
-    "expected_digest": "sha256:370d6993d0de390a58c4755e452ffa7c8d452d8768ce2631c501d51122d4d1d2",
+    "expected_digest": "sha256:b6727e1b05bcb69d76a236e3fe38d3a5be45b11b5b4a3cf48307264b5ca5a5fd",
     "policy": {
       "adequacy_direction": "positive"
     },
@@ -463,7 +463,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "unknown|checker_unknown",
-    "expected_digest": "sha256:1021907b5f9ef6b6ddbba7feaaf2e62e3852e3aa5ff23fb9dfd6268bec4ad8c3",
+    "expected_digest": "sha256:38087dc46ec0222d11756bb9e7332e695a6551926d83a6bffd4932fd04a3789a",
     "unsafe_claim": true,
     "policy": {
       "adequacy_direction": "negative"
@@ -550,7 +550,7 @@
     "kind": "authority:status",
     "suite": "legacy-authority",
     "expected": "out_of_frame|out_of_frame",
-    "expected_digest": "sha256:e5dd0a0df3a59b37676acac7cbb16f14bb54408b494da689feacc7524c436fad",
+    "expected_digest": "sha256:bb4119dde538c4f0a9e253b0c685b190fed1063c3060c99391d7f55e249de014",
     "proposed_use": {
       "mode": "assertion",
       "claim": "safe-temp",

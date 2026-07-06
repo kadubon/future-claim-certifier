@@ -3258,6 +3258,7 @@ def replay_authority_from_bundle(
     backend: Any | None = None,
     checker: Any | None = None,
     registry: Any | None = None,
+    allow_synthetic_trust: bool = False,
 ) -> AuthorityReplayResult:
     ledger = build_reference_ledger(bundle, strict=strict_ledger)
     if not ledger.passed:
@@ -3447,6 +3448,7 @@ def replay_authority_from_bundle(
         kernel_proof_artifacts=kernel_proofs,
         strict_replay=strict_ledger,
         synthetic_trust=bundle.bundle_id.startswith("synthetic:"),
+        allow_synthetic_trust=allow_synthetic_trust,
     )
 
     view = _check_authority_core(

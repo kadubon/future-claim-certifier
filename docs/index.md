@@ -49,6 +49,10 @@ uv run dfcc validate-bundle artifact-bundle.json --full-replay
 uv run dfcc replay-status --bundle artifact-bundle.json
 ```
 
+Use the strict replay path for authority. Direct file or dictionary checks are
+compatibility helpers unless the returned view proves that all artifact
+references, accepted clauses, proof records, and blocking records were replayed.
+
 Check conformance:
 
 ```bash
@@ -63,4 +67,3 @@ uv run dfcc conformance run --suite primary
 - [Protocol Mapping](protocol-mapping.md) is the formal audit table from paper
   terms to implementation names.
 - [OpenAPI](openapi.yaml) describes the schema surface for tool integrations.
-

@@ -9,19 +9,25 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: publish-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build and verify release artifacts
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86
         with:
           enable-cache: true
       - name: Set up Python
         run: uv python install 3.11
       - name: Install dependencies
-        run: uv sync --all-groups --python 3.11
+        run: uv sync --locked --all-groups --python 3.11
       - name: Ruff format check
         run: uv run ruff format --check .
       - name: Ruff lint
@@ -42,10 +48,60 @@ jobs:
         run: uv build
       - name: Remove build helper files
         run: rm -f dist/.gitignore
+      - name: Inspect release archives
+        run: |
+          python - <<'PY'
+          import re
+          import tarfile
+          import zipfile
+          from pathlib import Path
+
+          token_name = "PYPI_" + "TO" + "KEN"
+          private_key = "BEGIN " + "PRIVATE " + "KEY"
+          windows_home = "C:" + "\\\\" + "Users" + "\\\\"
+          linux_home = "/" + "home" + "/"
+          mac_home = "/" + "Users" + "/"
+          forbidden_name = re.compile(r"(__pycache__|\.pyc$|(^|/)coverage\.xml$|(^|/)\.coverage$)")
+          forbidden_content = re.compile(
+              r"("
+              + re.escape(windows_home)
+              + "|"
+              + re.escape(linux_home)
+              + "|"
+              + re.escape(mac_home)
+              + "|"
+              + re.escape(token_name)
+              + "|"
+              + re.escape(private_key)
+              + ")"
+          )
+          for path in Path("dist").glob("*"):
+              names = []
+              if path.suffix == ".whl":
+                  with zipfile.ZipFile(path) as zf:
+                      names = zf.namelist()
+                      payloads = [zf.read(name).decode("utf-8", "ignore") for name in names if name.endswith((".py", ".md", ".txt", ".toml", ".yaml", ".yml", ".json"))]
+              elif path.suffixes[-2:] == [".tar", ".gz"]:
+                  with tarfile.open(path) as tf:
+                      names = tf.getnames()
+                      payloads = []
+                      for member in tf.getmembers():
+                          if member.isfile() and member.name.endswith((".py", ".md", ".txt", ".toml", ".yaml", ".yml", ".json")):
+                              stream = tf.extractfile(member)
+                              if stream is not None:
+                                  payloads.append(stream.read().decode("utf-8", "ignore"))
+              else:
+                  continue
+              if any(forbidden_name.search(name) for name in names):
+                  raise SystemExit(f"release archive contains forbidden generated file: {path}")
+              haystack = "\n".join(payloads)
+              if forbidden_content.search(haystack):
+                  raise SystemExit(f"release archive contains forbidden local or secret material: {path}")
+          PY
       - name: Check distribution metadata
         run: uvx twine check dist/*.whl dist/*.tar.gz
       - name: Upload distributions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-distributions
           path: |
@@ -61,12 +117,12 @@ jobs:
       id-token: write
     steps:
       - name: Download distributions
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: python-distributions
           path: dist
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
 
   github-release:
     name: Create GitHub release
@@ -76,12 +132,12 @@ jobs:
       contents: write
     steps:
       - name: Download distributions
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: python-distributions
           path: dist
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
           files: |
             dist/*.whl

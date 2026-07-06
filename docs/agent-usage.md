@@ -12,8 +12,10 @@ result.
 
 1. Encode the future claim as the JSON claim AST.
 2. Encode the assumptions or provide accepted clause artifacts.
-3. Issue a certificate with `dfcc certify` or `certify_claim`.
-4. At use time, call `dfcc check`, `dfcc replay-status`, or `check_authority`.
+3. Issue a certificate from an artifact bundle when the result will be used as
+   authority.
+4. At use time, call `dfcc validate-bundle --full-replay`,
+   `dfcc replay-status --bundle`, or artifact-bundle `check_authority`.
 5. Treat only an allowing outcome with an empty blocking set as authority.
 6. Preserve the returned `reason_ref_records` and `blocking_records` for audit.
 
@@ -46,22 +48,22 @@ Do not treat these as permission to act:
 ## Minimal Python Example
 
 ```python
-from dfcc.authority import check_authority
-from dfcc.certificate import certify_claim
+from dfcc.validation import validate_artifact_bundle
 
-certificate = certify_claim(claim, bundle, anchor, time_basis)
-view = check_authority(
-    certificate,
-    proposed_use,
-    {"status_time": "2026-01-01T00:00:00Z"},
-)
+report = validate_artifact_bundle(artifact_bundle, full_replay=True)
+view = report.authority_view
 
-outcome = view.authority_outcome
-if outcome.code == "assert" and not outcome.blocking_set:
+if view is not None and view.authority_outcome.code == "assert" and not view.blocking_set:
     use_claim_as_represented_authority()
 else:
-    store_reasons_for_audit(outcome.reason_ref_records)
+    store_reasons_for_audit(report.final_result.reason_refs)
 ```
+
+`certify_claim` and direct `check_authority(certificate, use, status)` are
+legacy convenience APIs. They are useful for local experiments, but by default
+direct authority inputs return blocking `unknown` because the inputs are
+synthetic trust. Passing `allow_synthetic_trust=True` is an explicit migration
+choice, not the strict protocol path.
 
 ## Operational Use
 
@@ -92,4 +94,3 @@ checker evidence.
 Agents should log the authority outcome digest, blocking ids, artifact digests,
 and JSON Pointer reason paths. Avoid logging secret artifact payloads unless
 the deployment policy explicitly allows it.
-
