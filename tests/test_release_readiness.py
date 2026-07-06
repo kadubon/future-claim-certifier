@@ -101,7 +101,9 @@ def test_publish_workflow_uses_pypi_trusted_publishing() -> None:
         for step in build_steps
     )
     assert any("SHA256SUMS.txt" in str(step.get("run", "")) for step in build_steps)
-    assert any("gh attestation sign" in str(step.get("run", "")) for step in build_steps)
+    build_uses = [step.get("uses", "") for step in build_steps if isinstance(step, dict)]
+    assert any("actions/attest-build-provenance@" in value for value in build_uses)
+    assert all(re.search(r"@[0-9a-f]{40}$", value) for value in build_uses if "@" in value)
 
 
 def test_github_workflows_pin_actions_and_run_strict_checks() -> None:

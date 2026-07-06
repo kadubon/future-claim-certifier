@@ -110,9 +110,11 @@ jobs:
           sha256sum dist/*.whl dist/*.tar.gz > release-assets/SHA256SUMS.txt
           uv run python -m pip list --format=json > release-assets/python-dependencies.json
       - name: Generate GitHub artifact attestations
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh attestation sign dist/*.whl dist/*.tar.gz --repo "$GITHUB_REPOSITORY"
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373
+        with:
+          subject-path: |
+            dist/*.whl
+            dist/*.tar.gz
       - name: Upload distributions
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
