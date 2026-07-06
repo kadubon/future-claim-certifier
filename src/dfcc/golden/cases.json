@@ -1,0 +1,564 @@
+[
+  {
+    "case_id": "primary-full-replay-missing-authority-artifacts",
+    "kind": "artifact-bundle",
+    "expected": "missing_ref",
+    "expected_digest": "sha256:2db420126616f33558a3875697fcde79b968fbf80b99c8fcb4371b8eb8d9844f",
+    "bundle": {
+      "bundle_id": "primary-full-replay-missing-authority-artifacts",
+      "manifest": {
+        "manifest_id": "manifest:primary-full-replay-missing-authority-artifacts",
+        "root_artifact_id": "artifact:primary-full-replay-root",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:primary-full-replay-root",
+            "artifact_type": "json",
+            "schema_profile": "dfcc-json/0.1",
+            "canonicalization": "rfc8785-jcs",
+            "media_type": "application/json",
+            "schema_digest": "sha256:f51aaab09ee541dd83f9a4d562bcfd61c08c50defb58811df264293d80496299",
+            "canonicalization_digest": "sha256:277c63aea4e3796d9ec0e0625e0222f9c9c6f26956732ba110c5464469e4daab",
+            "digest_algorithm": "sha256",
+            "digest_value": "sha256:f7c2f0c0ec50b6b8674f2fbc05747b0c004ee9f964a25fce1517617ed4347e87",
+            "content_uri": null,
+            "retrieval_policy": "local",
+            "immutability_policy": "digest-addressed",
+            "provenance_refs": [],
+            "semantic_role": null,
+            "dependency_labels": []
+          }
+        ],
+        "dependency_order": [
+          "artifact:primary-full-replay-root"
+        ]
+      },
+      "reference_context": {
+        "snapshot_id": "snapshot:primary-full-replay"
+      },
+      "artifacts": [
+        {
+          "artifact_ref": {
+            "artifact_id": "artifact:primary-full-replay-root",
+            "artifact_type": "json",
+            "schema_profile": "dfcc-json/0.1",
+            "canonicalization": "rfc8785-jcs",
+            "media_type": "application/json",
+            "schema_digest": "sha256:f51aaab09ee541dd83f9a4d562bcfd61c08c50defb58811df264293d80496299",
+            "canonicalization_digest": "sha256:277c63aea4e3796d9ec0e0625e0222f9c9c6f26956732ba110c5464469e4daab",
+            "digest_algorithm": "sha256",
+            "digest_value": "sha256:f7c2f0c0ec50b6b8674f2fbc05747b0c004ee9f964a25fce1517617ed4347e87",
+            "content_uri": null,
+            "retrieval_policy": "local",
+            "immutability_policy": "digest-addressed",
+            "provenance_refs": [],
+            "semantic_role": null,
+            "dependency_labels": []
+          },
+          "artifact": {
+            "x": {
+              "y": "z"
+            }
+          },
+          "role": "root",
+          "reason_paths": [
+            "/x/y"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "primary-full-replay-canonicalization-mismatch",
+    "kind": "artifact-bundle",
+    "fixture": "interop:canonicalization-mismatch",
+    "expected": "canonicalization_mismatch",
+    "expected_digest": "sha256:a24e89eeabbf1178109942ae93b84e93ecc8806eb78a5a6847c29bdcf376b25b"
+  },
+  {
+    "case_id": "primary-full-replay-schema-invalid",
+    "kind": "artifact-bundle",
+    "fixture": "interop:schema-invalid",
+    "expected": "schema_invalid",
+    "expected_digest": "sha256:a9b75fc5aa813a1e13534d5432e74194bdea8effa8d1adf0c6f805636230b88f"
+  },
+  {
+    "case_id": "primary-full-replay-digest-mismatch",
+    "kind": "artifact-bundle",
+    "fixture": "interop:digest-mismatch",
+    "expected": "digest_mismatch",
+    "expected_digest": "sha256:5d8134efe7b4cdac0e3fd829175de2b531b5e1e500b0a95dcd8ddf29c716629b"
+  },
+  {
+    "case_id": "primary-full-replay-missing-ref",
+    "kind": "artifact-bundle",
+    "fixture": "interop:missing-ref",
+    "expected": "missing_ref",
+    "expected_digest": "sha256:5e75eda0658c2c3aacd351d437eda5fa69d835d6ec6d84afcc43978ed2136956"
+  },
+  {
+    "case_id": "primary-full-replay-missing-kernel-proof",
+    "kind": "artifact-bundle",
+    "fixture": "authority:missing-kernel-proof",
+    "expected": "unknown|checker_unknown",
+    "expected_digest": "sha256:605a5e68130de1df361cdbb2b2b15fb74e8c77eb47f761c0448dbcaf7ae07383"
+  },
+  {
+    "case_id": "primary-full-replay-stale-embedded-source",
+    "kind": "artifact-bundle",
+    "fixture": "authority:stale-embedded-source",
+    "expected": "assert|",
+    "expected_digest": "sha256:f7def05a75f2f2dd76b4a0e64198ad350b1ad8cb5ad481a53ac26dbfd29bf550"
+  },
+  {
+    "case_id": "primary-full-replay-raw-evidence-only",
+    "kind": "artifact-bundle",
+    "fixture": "authority:raw-evidence-only",
+    "expected": "assert|",
+    "expected_digest": "sha256:5a63e0686b36713deffb14ed89dce7914d8ccc234c91725624a0f75cfd40e271"
+  },
+  {
+    "case_id": "primary-full-replay-operational-accept",
+    "kind": "artifact-bundle",
+    "fixture": "authority:operational-accept",
+    "expected": "accept|",
+    "expected_digest": "sha256:7b9b3fcfa4638d3538cdf13f04e1887b935f185285cb710befd700f9e8c52435"
+  },
+  {
+    "case_id": "primary-full-replay-operational-reject",
+    "kind": "artifact-bundle",
+    "fixture": "authority:operational-reject",
+    "expected": "reject|",
+    "expected_digest": "sha256:385ca9c9877e61bcd933c2755d3f35a986d0508e3dda827c5f4f68227e3e13cf"
+  },
+  {
+    "case_id": "primary-full-replay-operational-agreement-mismatch",
+    "kind": "artifact-bundle",
+    "fixture": "authority:operational-agreement-mismatch",
+    "expected": "unknown|artifact_conflict",
+    "expected_digest": "sha256:384942045da05130169792ba8518b8e8a001c9b9bcd187f2395bfc8d0a7abefd"
+  },
+  {
+    "case_id": "primary-full-replay-missing-completion-proof",
+    "kind": "artifact-bundle",
+    "fixture": "authority:missing-completion-proof",
+    "expected": "unknown|checker_unknown",
+    "expected_digest": "sha256:20c6ca27d8defa66a0105bb226709ff9e1e7ec70bbf5421fede19916568e9023"
+  },
+  {
+    "case_id": "primary-full-replay-accepted-clause-provenance",
+    "kind": "artifact-bundle",
+    "fixture": "authority:accepted-clause-provenance",
+    "expected": "assert|",
+    "expected_digest": "sha256:542f27cfd063d830b0af3bc666119ac42280562e1d133497aac749848bf4fa5f"
+  },
+  {
+    "case_id": "primary-full-replay-accepted-clause-target-mismatch",
+    "kind": "artifact-bundle",
+    "fixture": "authority:accepted-clause-target-mismatch",
+    "expected": "artifact_conflict",
+    "expected_digest": "sha256:c54eb4d1bd62d5c7e3709a29082188d1649e25b9af418316e54a8e3dc54e7937"
+  },
+  {
+    "case_id": "primary-full-replay-policy-block",
+    "kind": "artifact-bundle",
+    "fixture": "authority:policy-block",
+    "expected": "block|policy_block",
+    "expected_digest": "sha256:ae4802067ee4c41970b04335fdf126fc0284805996ef65a8e570d2d7e7e17310"
+  },
+  {
+    "case_id": "primary-full-replay-expired-clock",
+    "kind": "artifact-bundle",
+    "fixture": "authority:expired-clock",
+    "expected": "expired|expired",
+    "expected_digest": "sha256:1c0284b87590ee3c44b29018ac83c651f80dffcb47caa80d40d7ef2d21603829"
+  },
+  {
+    "case_id": "primary-full-replay-boundary-unknown-clock",
+    "kind": "artifact-bundle",
+    "fixture": "authority:boundary-unknown-clock",
+    "expected": "unknown|clock_boundary_unknown",
+    "expected_digest": "sha256:07f3d08c28bce60083dea3a1b5b26109c07042d0831337dd7b1317362d05c6c8"
+  },
+  {
+    "case_id": "primary-full-replay-conflicting-traces",
+    "kind": "artifact-bundle",
+    "fixture": "authority:conflicting-traces",
+    "expected": "conflict|trace_conflict",
+    "expected_digest": "sha256:d652e6b90631573961d319b86692f37bd2ee6e9eb547b58906c3f57795f10097"
+  },
+  {
+    "case_id": "primary-full-replay-missing-confluence-proof",
+    "kind": "artifact-bundle",
+    "fixture": "authority:missing-confluence-proof",
+    "expected": "missing_ref",
+    "expected_digest": "sha256:84471949f7d295f374bb4f6a38ec0c7bd0982e12569207d99cb241dc83a88bab"
+  },
+  {
+    "case_id": "primary-full-replay-manifest-order-conflict",
+    "kind": "artifact-bundle",
+    "fixture": "interop:manifest-order-conflict",
+    "expected": "artifact_conflict",
+    "expected_digest": "sha256:4c147b9138554ccdc5f1ad17d411f79685ce30afd1e6e33b7de014fc34f889a3"
+  },
+  {
+    "case_id": "canonicalization-mismatch",
+    "kind": "canonicalization-mismatch",
+    "suite": "legacy-interop",
+    "expected": "invalid_artifact",
+    "expected_digest": "sha256:d45568a141278ac61919ffcf8d250a12aee9bf10b5292604c1e289ae10fa2f0a"
+  },
+  {
+    "case_id": "schema-invalid",
+    "kind": "schema-invalid",
+    "suite": "legacy-interop",
+    "expected": "schema_invalid",
+    "expected_digest": "sha256:aa1f122757beda8bb3e4d7112d9ffd0021440d2897c5d0faa66f11845ae01a8a"
+  },
+  {
+    "case_id": "digest-mismatch",
+    "kind": "digest-mismatch",
+    "suite": "legacy-interop",
+    "expected": "digest_mismatch",
+    "expected_digest": "sha256:89f3bbad3780fed95c03f7440a52f3150c979cc2b8c7d712becb17213e6c885a"
+  },
+  {
+    "case_id": "missing-ref",
+    "kind": "missing-ref",
+    "suite": "legacy-interop",
+    "expected": "missing_ref",
+    "expected_digest": "sha256:93c3d12437ee415bb9aedcf08c023bdcd448136a2553c5641bff1858bc92265b"
+  },
+  {
+    "case_id": "manifest-order-conflict",
+    "kind": "manifest-order-conflict",
+    "suite": "legacy-interop",
+    "expected": "artifact_conflict",
+    "expected_digest": "sha256:57d22ee69780f9ef9e592dcb414be3bc836d1842e07e9b0500b5dc02679062e0"
+  },
+  {
+    "case_id": "raw-evidence-only-semantics",
+    "kind": "raw-evidence-only-semantics",
+    "suite": "legacy-interop",
+    "expected": "empty_semantics",
+    "expected_digest": "sha256:f909620f67520c3243f3038da28787d9f333add6c4b242b6421b83bf27894a42"
+  },
+  {
+    "case_id": "conflicting-traces",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "conflict|trace_conflict",
+    "expected_digest": "sha256:ed2cbe98eca29028e5b0657b40f67cad1e34842dffdbf4f72c4293f11c01a0ce",
+    "proposed_use": {
+      "mode": "assertion",
+      "claim": "safe-temp",
+      "horizon": 2,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:00:00Z",
+      "event_log": [
+        {
+          "event_id": "evt-1",
+          "certificate_id": "will-be-ignored-by-builder",
+          "time": "2026-01-01T00:00:00Z",
+          "logical_clock": 1,
+          "kind": "expire"
+        },
+        {
+          "event_id": "evt-2",
+          "certificate_id": "will-be-ignored-by-builder",
+          "time": "2026-01-01T00:00:01Z",
+          "logical_clock": 1,
+          "kind": "revoke"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "empty-exact-prefix",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "unknown|exact_prefix_empty",
+    "expected_digest": "sha256:66ad6fc75600653310fa1805351d664f1ab7c189ba500873ddfef90ccded2e0f",
+    "proposed_use": {
+      "mode": "assertion",
+      "claim": "safe-temp",
+      "horizon": 2,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:00:00Z",
+      "prefix_view": {
+        "prefix_status": "pass",
+        "r": 0,
+        "p_star": [],
+        "p_out": [
+          [
+            {
+              "temp": "70"
+            }
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "case_id": "missing-completion-admission",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "unknown|completion_missing",
+    "expected_digest": "sha256:6f39ccb9ff56208c7b71e1f1cdf175d04a65da8493a8f65e7a29741fba760792",
+    "proposed_use": {
+      "mode": "operational",
+      "claim": "safe-temp",
+      "horizon": 2,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "case_id": "policy-block",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "block|policy_block",
+    "expected_digest": "sha256:72840a88d23969ed75f8f23c972765f475491cf94d142e1187abef5780635e91",
+    "policy": {
+      "blocked_modes": [
+        "assertion"
+      ]
+    },
+    "proposed_use": {
+      "mode": "assertion",
+      "claim": "safe-temp",
+      "horizon": 2,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "case_id": "expired-clock",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "expired|expired",
+    "expected_digest": "sha256:bc0a7b781b3aa570820a04c8a030267921715aa6cfb6e79effeb36f2402891a6",
+    "proposed_use": {
+      "mode": "assertion",
+      "claim": "safe-temp",
+      "horizon": 2,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:03:01Z"
+    }
+  },
+  {
+    "case_id": "boundary-unknown-clock",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "unknown|clock_boundary_unknown",
+    "expected_digest": "sha256:d91d834328702fad935dcafb9f89699b48e37fd750b90785d66fd76866541c46",
+    "boundary_uncertainty": 2,
+    "proposed_use": {
+      "mode": "assertion",
+      "claim": "safe-temp",
+      "horizon": 2,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:01:00Z"
+    }
+  },
+  {
+    "case_id": "operational-positive-accept",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "unknown|checker_unknown",
+    "expected_digest": "sha256:370d6993d0de390a58c4755e452ffa7c8d452d8768ce2631c501d51122d4d1d2",
+    "policy": {
+      "adequacy_direction": "positive"
+    },
+    "proposed_use": {
+      "mode": "operational",
+      "claim": "safe-temp",
+      "horizon": 2,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:00:00Z",
+      "observation_records": [
+        {
+          "r": 0,
+          "represented_prefix": [
+            {
+              "temp": "70"
+            }
+          ],
+          "operational_prefix": [
+            {
+              "temp": "70"
+            }
+          ],
+          "operational_completions": [
+            [
+              {
+                "temp": "70"
+              },
+              {
+                "temp": "75"
+              },
+              {
+                "temp": "75"
+              }
+            ]
+          ],
+          "prefix_adjudication": "accept",
+          "target_adjudication": "accept",
+          "calibration_ref": {
+            "checker_status": "pass",
+            "artifact_ref": "artifact:calibration-golden",
+            "proof_kind": "calibration",
+            "artifact_digest": "sha256:calibration"
+          },
+          "latency_ref": {
+            "checker_status": "pass",
+            "artifact_ref": "artifact:latency-golden",
+            "proof_kind": "latency",
+            "artifact_digest": "sha256:latency"
+          },
+          "dependency_ref": {
+            "checker_status": "pass",
+            "artifact_ref": "artifact:dependency-golden",
+            "proof_kind": "dependency",
+            "artifact_digest": "sha256:dependency"
+          },
+          "event_order_ref": {
+            "checker_status": "pass",
+            "artifact_ref": "artifact:event-order-golden",
+            "proof_kind": "event_order",
+            "artifact_digest": "sha256:event-order"
+          },
+          "representation_proof_ref": "representation-proof:golden"
+        }
+      ],
+      "observation_policy": {
+        "r": 0
+      },
+      "completion_admission": {
+        "completion_status": "pass",
+        "checker_result": "pass",
+        "admission_source": "golden",
+        "expiry": "unbounded",
+        "uncertainty_model": "exact",
+        "reference_digest": "sha256:completion",
+        "checker_transcript_ref": "artifact:completion-transcript"
+      }
+    }
+  },
+  {
+    "case_id": "operational-negative-reject",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "unknown|checker_unknown",
+    "expected_digest": "sha256:1021907b5f9ef6b6ddbba7feaaf2e62e3852e3aa5ff23fb9dfd6268bec4ad8c3",
+    "unsafe_claim": true,
+    "policy": {
+      "adequacy_direction": "negative"
+    },
+    "proposed_use": {
+      "mode": "operational",
+      "claim": "safe-temp",
+      "horizon": 2,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:00:00Z",
+      "observation_records": [
+        {
+          "r": 0,
+          "represented_prefix": [
+            {
+              "temp": "90"
+            }
+          ],
+          "operational_prefix": [
+            {
+              "temp": "90"
+            }
+          ],
+          "operational_completions": [
+            [
+              {
+                "temp": "90"
+              },
+              {
+                "temp": "90"
+              },
+              {
+                "temp": "90"
+              }
+            ]
+          ],
+          "prefix_adjudication": "accept",
+          "target_adjudication": "reject",
+          "calibration_ref": {
+            "checker_status": "pass",
+            "artifact_ref": "artifact:calibration-golden",
+            "proof_kind": "calibration",
+            "artifact_digest": "sha256:calibration"
+          },
+          "latency_ref": {
+            "checker_status": "pass",
+            "artifact_ref": "artifact:latency-golden",
+            "proof_kind": "latency",
+            "artifact_digest": "sha256:latency"
+          },
+          "dependency_ref": {
+            "checker_status": "pass",
+            "artifact_ref": "artifact:dependency-golden",
+            "proof_kind": "dependency",
+            "artifact_digest": "sha256:dependency"
+          },
+          "event_order_ref": {
+            "checker_status": "pass",
+            "artifact_ref": "artifact:event-order-golden",
+            "proof_kind": "event_order",
+            "artifact_digest": "sha256:event-order"
+          },
+          "representation_proof_ref": "representation-proof:golden"
+        }
+      ],
+      "observation_policy": {
+        "r": 0
+      },
+      "completion_admission": {
+        "completion_status": "pass",
+        "checker_result": "pass",
+        "admission_source": "golden",
+        "expiry": "unbounded",
+        "uncertainty_model": "exact",
+        "reference_digest": "sha256:completion",
+        "checker_transcript_ref": "artifact:completion-transcript"
+      }
+    }
+  },
+  {
+    "case_id": "out-of-frame-use",
+    "kind": "authority:status",
+    "suite": "legacy-authority",
+    "expected": "out_of_frame|out_of_frame",
+    "expected_digest": "sha256:e5dd0a0df3a59b37676acac7cbb16f14bb54408b494da689feacc7524c436fad",
+    "proposed_use": {
+      "mode": "assertion",
+      "claim": "safe-temp",
+      "horizon": 3,
+      "anchor": "anchor:issue"
+    },
+    "status_context": {
+      "status_time": "2026-01-01T00:00:00Z"
+    }
+  }
+]

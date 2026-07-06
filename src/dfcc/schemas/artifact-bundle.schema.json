@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/artifact-bundle.schema.json",
+  "title": "DFCC ArtifactBundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["bundle_id", "manifest", "artifacts"],
+  "properties": {
+    "bundle_id": { "type": "string", "minLength": 1 },
+    "manifest": { "$ref": "manifest-record.schema.json" },
+    "reference_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_id": { "type": "string" },
+        "status_time": { "type": ["string", "null"] },
+        "retrieval_policy": { "type": "string" },
+        "dependency_snapshot": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "event_cut": { "type": "array", "items": { "type": "string" } },
+        "profile_ref": { "type": "string" },
+        "allowed_retrieval_policies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "allowed_immutability_policies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "schema_digests": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "canonicalization_digests": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "semantic_roles": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifact_ref", "artifact"],
+        "properties": {
+          "artifact_ref": { "$ref": "artifact-ref.schema.json" },
+          "artifact": true,
+          "role": { "type": "string" },
+          "schema_name": { "type": ["string", "null"] },
+          "reason_paths": { "type": "array", "items": { "type": "string" } },
+          "obligation_refs": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

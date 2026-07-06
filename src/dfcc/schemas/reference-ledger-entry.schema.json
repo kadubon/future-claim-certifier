@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/reference-ledger-entry.schema.json",
+  "title": "DFCC ReferenceLedgerEntry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ref_value",
+    "kind",
+    "owner_artifact",
+    "owner_path",
+    "target_artifact_id",
+    "target_path",
+    "target_digest",
+    "semantic_role",
+    "required",
+    "resolved",
+    "expected_kind",
+    "expected_semantic_role",
+    "expected_digest",
+    "required_stage",
+    "active_scope_status"
+  ],
+  "properties": {
+    "ref_value": { "type": "string" },
+    "kind": {
+      "enum": [
+        "artifact",
+        "reason",
+        "obligation",
+        "set",
+        "profile",
+        "schema",
+        "transcript",
+        "proof"
+      ]
+    },
+    "owner_artifact": { "type": "string" },
+    "owner_path": { "type": "string" },
+    "target_artifact_id": { "type": "string" },
+    "target_path": { "type": "string" },
+    "target_digest": { "type": ["string", "null"] },
+    "semantic_role": { "type": ["string", "null"] },
+    "required": { "type": "boolean" },
+    "resolved": { "type": "boolean" },
+    "expected_kind": {
+      "type": ["string", "null"],
+      "enum": [
+        "artifact",
+        "reason",
+        "obligation",
+        "set",
+        "profile",
+        "schema",
+        "transcript",
+        "proof",
+        null
+      ]
+    },
+    "expected_semantic_role": { "type": ["string", "null"] },
+    "expected_digest": { "type": ["string", "null"] },
+    "required_stage": {
+      "enum": [
+        "Parse",
+        "Canonicalize",
+        "SchemaValidate",
+        "DigestCheck",
+        "ReferenceResolve",
+        "ProfileResolve",
+        "Replay",
+        "GuardEvaluate",
+        "KernelCheck",
+        "AuthorityEmit"
+      ]
+    },
+    "active_scope_status": { "type": "string" }
+  }
+}

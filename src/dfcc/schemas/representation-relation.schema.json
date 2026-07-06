@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/representation-relation.schema.json",
+  "title": "DFCC RepresentationRelation",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "bound_ref": {
+      "type": "string",
+      "pattern": "^(artifact:.+|sha(256|384|512):.+)$"
+    }
+  },
+  "required": [
+    "relation_id",
+    "operational_prefix",
+    "represented_prefix",
+    "proof_ref"
+  ],
+  "properties": {
+    "relation_id": { "type": "string" },
+    "operational_prefix": { "type": "array" },
+    "represented_prefix": { "type": "array" },
+    "proof_ref": { "$ref": "#/$defs/bound_ref" }
+  }
+}

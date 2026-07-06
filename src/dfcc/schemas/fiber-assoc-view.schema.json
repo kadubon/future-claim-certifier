@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/fiber-assoc-view.schema.json",
+  "title": "DFCC FiberAssocView",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["fiber_status"],
+  "properties": {
+    "fiber_status": {
+      "enum": [
+        "out_of_frame",
+        "unknown",
+        "conflict",
+        "empty",
+        "mixed",
+        "positive",
+        "negative",
+        "undetermined"
+      ]
+    },
+    "f_out_ref": { "type": ["string", "null"] },
+    "f_in_ref": { "type": ["string", "null"] },
+    "fiber_obligations": { "type": "array", "items": { "type": "string" } },
+    "reason_refs": { "type": "array", "items": { "$ref": "reason-ref.schema.json" } }
+  }
+}

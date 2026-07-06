@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/profile-resolution.schema.json",
+  "title": "DFCC ProfileResolution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requested_profile",
+    "implemented_profile",
+    "version_relation",
+    "enabled_features",
+    "closed_world",
+    "extension_mapping",
+    "status",
+    "reason_refs"
+  ],
+  "properties": {
+    "requested_profile": { "type": "string", "minLength": 1 },
+    "implemented_profile": { "type": ["string", "null"] },
+    "version_relation": {
+      "enum": ["exact", "compatible", "unsupported", "unknown"]
+    },
+    "enabled_features": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "closed_world": { "type": "boolean" },
+    "extension_mapping": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "status": {
+      "enum": ["pass", "unsupported_profile", "checker_unknown", "schema_invalid"]
+    },
+    "reason_refs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "pass" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "implemented_profile": { "type": "string", "minLength": 1 },
+          "version_relation": { "enum": ["exact", "compatible"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "unsupported_profile" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "implemented_profile": { "type": "null" },
+          "version_relation": { "const": "unsupported" },
+          "enabled_features": { "maxItems": 0 },
+          "extension_mapping": { "maxProperties": 0 },
+          "reason_refs": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "enum": ["checker_unknown", "schema_invalid"] } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "reason_refs": { "minItems": 1 }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/prefix-view.schema.json",
+  "title": "DFCC PrefixView",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["prefix_status", "r", "p_star", "p_out"],
+  "properties": {
+    "prefix_status": { "enum": ["pass", "unknown", "conflict"] },
+    "r": { "type": "integer", "minimum": 0 },
+    "p_star": { "type": "array" },
+    "p_out": { "type": "array" },
+    "p_in": { "type": ["array", "null"] },
+    "prefix_obligations": { "type": "array", "items": { "type": "string" } },
+    "reason_refs": { "type": "array", "items": { "$ref": "reason-ref.schema.json" } }
+  }
+}

@@ -1,0 +1,657 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://dfcc.local/schemas/status-authority-view.schema.json",
+    "title": "DFCC StatusAuthorityView",
+    "$defs": {
+        "typed_reason_ref": {
+            "allOf": [
+                {"$ref": "reason-ref.schema.json"},
+                {
+                    "type": "object",
+                    "required": ["digest"],
+                    "properties": {
+                        "source_artifact": {"type": "string", "pattern": "^artifact:.+"},
+                        "source_path": {"type": "string", "pattern": "^/.*$"},
+                        "digest": {"type": "string", "pattern": "^sha(256|384|512):.+"}
+                    }
+                }
+            ]
+        },
+        "typed_blocking_record": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "block_id",
+                "failure_code",
+                "layer",
+                "severity",
+                "reason_refs",
+                "reason_ref_records"
+            ],
+            "properties": {
+                "block_id": {"type": "string"},
+                "failure_code": {"type": "string"},
+                "layer": {"type": "string"},
+                "severity": {"type": "string"},
+                "reason_refs": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+                "reason_ref_records": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {"$ref": "#/$defs/typed_reason_ref"}
+                }
+            }
+        }
+    },
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "certificate_id",
+        "schema_profile_ref",
+        "canonicalization_profile_ref",
+        "manifest_digest",
+        "validation_result_ref",
+        "proposed_use_ref",
+        "fold_context_ref",
+        "status_coordinates_ref",
+        "blocking_set_ref",
+        "dominant_status",
+        "status_observation_context_ref",
+        "prefix_view_ref",
+        "completion_admission_ref",
+        "residual_context_ref",
+        "validity_view_ref",
+        "kernel_view_ref",
+        "exact_fiber_assoc_ref",
+        "fiber_assoc_view_ref",
+        "adjudication_views_ref",
+        "agreement_ref",
+        "gate_decision_ref",
+        "authority_outcome",
+        "set_refs",
+        "set_ref_records",
+        "artifact_refs",
+        "artifact_ref_records",
+        "obligation_refs",
+        "obligation_ref_records",
+        "reason_refs",
+        "reason_ref_records",
+        "blocking_records",
+        "proof_refs",
+        "proof_ref_records",
+        "protocol_record_refs",
+        "ledger_entries",
+        "stage_blockers"
+    ],
+    "properties": {
+        "certificate_id": {"type": "string"},
+        "schema_profile_ref": {"type": "string"},
+        "canonicalization_profile_ref": {"type": "string"},
+        "manifest_digest": {"type": "string"},
+        "validation_result_ref": {"type": "string"},
+        "proposed_use_ref": {"type": "string"},
+        "fold_context_ref": {"type": "string"},
+        "status_coordinates_ref": {"type": "string"},
+        "blocking_set_ref": {"type": "string"},
+        "dominant_status": {
+            "enum": [
+                "active",
+                "unknown",
+                "conflict",
+                "invalid",
+                "expired",
+                "out_of_frame",
+                "revoked",
+                "superseded",
+                "not_effective",
+                "boundary_unknown"
+            ]
+        },
+        "status_observation_context_ref": {"type": "string"},
+        "prefix_view_ref": {"type": "string"},
+        "completion_admission_ref": {"type": "string"},
+        "residual_context_ref": {"type": "string"},
+        "validity_view_ref": {"type": "string"},
+        "kernel_view_ref": {"type": "string"},
+        "exact_fiber_assoc_ref": {"type": "string"},
+        "fiber_assoc_view_ref": {"type": "string"},
+        "adjudication_views_ref": {"type": "string"},
+        "agreement_ref": {"type": "string"},
+        "gate_decision_ref": {"type": "string"},
+        "authority_outcome": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "layer",
+                "code",
+                "direction",
+                "blocking_set_ref",
+                "gate_decision",
+                "gate_decision_ref",
+                "profile_ref",
+                "outcome_schema_ref",
+                "issued_at_status_time",
+                "reason_refs",
+                "reason_ref_records",
+                "blocking_records"
+            ],
+            "properties": {
+                "layer": {"enum": ["issue", "represented", "operational", "status", "policy"]},
+                "code": {"type": "string"},
+                "direction": {"enum": ["positive", "negative", "infeasible", "neutral", "none"]},
+                "blocking_set_ref": {"type": "string"},
+                "gate_decision": {"enum": ["allow", "block", "unknown"]},
+                "gate_decision_ref": {"type": "string"},
+                "profile_ref": {"type": ["string", "null"]},
+                "outcome_schema_ref": {"type": ["string", "null"]},
+                "issued_at_status_time": {"type": ["string", "null"]},
+                "reason_refs": {"type": "array", "items": {"type": "string"}},
+                "reason_ref_records": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/typed_reason_ref"}
+                },
+                "blocking_records": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/typed_blocking_record"}
+                }
+            },
+            "oneOf": [
+                {
+                    "properties": {
+                        "layer": {"const": "issue"},
+                        "code": {
+                            "enum": [
+                                "assert",
+                                "deny",
+                                "infeasible",
+                                "abstain",
+                                "unknown",
+                                "conflict",
+                                "invalid"
+                            ]
+                        },
+                        "direction": {
+                            "enum": ["positive", "negative", "infeasible", "neutral", "none"]
+                        }
+                    },
+                    "allOf": [
+                        {
+                            "if": {"properties": {"code": {"const": "assert"}}},
+                            "then": {"properties": {"direction": {"const": "positive"}}}
+                        },
+                        {
+                            "if": {"properties": {"code": {"const": "deny"}}},
+                            "then": {"properties": {"direction": {"const": "negative"}}}
+                        },
+                        {
+                            "if": {"properties": {"code": {"const": "infeasible"}}},
+                            "then": {"properties": {"direction": {"const": "infeasible"}}}
+                        },
+                        {
+                            "if": {"properties": {"code": {"const": "abstain"}}},
+                            "then": {"properties": {"direction": {"const": "neutral"}}}
+                        },
+                        {
+                            "if": {
+                                "properties": {"code": {"enum": ["unknown", "conflict", "invalid"]}}
+                            },
+                            "then": {"properties": {"direction": {"const": "none"}}}
+                        }
+                    ]
+                },
+                {
+                    "properties": {
+                        "layer": {"const": "represented"},
+                        "code": {
+                            "enum": [
+                                "assert",
+                                "deny",
+                                "infeasible",
+                                "abstain",
+                                "unknown",
+                                "conflict",
+                                "invalid"
+                            ]
+                        },
+                        "direction": {
+                            "enum": ["positive", "negative", "infeasible", "neutral", "none"]
+                        }
+                    },
+                    "allOf": [
+                        {
+                            "if": {"properties": {"code": {"const": "assert"}}},
+                            "then": {"properties": {"direction": {"const": "positive"}}}
+                        },
+                        {
+                            "if": {"properties": {"code": {"const": "deny"}}},
+                            "then": {"properties": {"direction": {"const": "negative"}}}
+                        },
+                        {
+                            "if": {"properties": {"code": {"const": "infeasible"}}},
+                            "then": {"properties": {"direction": {"const": "infeasible"}}}
+                        },
+                        {
+                            "if": {"properties": {"code": {"const": "abstain"}}},
+                            "then": {"properties": {"direction": {"const": "neutral"}}}
+                        },
+                        {
+                            "if": {
+                                "properties": {"code": {"enum": ["unknown", "conflict", "invalid"]}}
+                            },
+                            "then": {"properties": {"direction": {"const": "none"}}}
+                        }
+                    ]
+                },
+                {
+                    "properties": {
+                        "layer": {"const": "operational"},
+                        "code": {
+                            "enum": [
+                                "accept",
+                                "reject",
+                                "indeterminate",
+                                "unknown",
+                                "conflict",
+                                "out_of_frame"
+                            ]
+                        }
+                    },
+                    "allOf": [
+                        {
+                            "if": {"properties": {"code": {"const": "accept"}}},
+                            "then": {"properties": {"direction": {"const": "positive"}}}
+                        },
+                        {
+                            "if": {"properties": {"code": {"const": "reject"}}},
+                            "then": {"properties": {"direction": {"const": "negative"}}}
+                        },
+                        {
+                            "if": {"properties": {"code": {"const": "indeterminate"}}},
+                            "then": {"properties": {"direction": {"const": "neutral"}}}
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "code": {"enum": ["unknown", "conflict", "out_of_frame"]}
+                                }
+                            },
+                            "then": {"properties": {"direction": {"const": "none"}}}
+                        }
+                    ]
+                },
+                {
+                    "properties": {
+                        "layer": {"const": "status"},
+                        "code": {
+                            "enum": [
+                                "active",
+                                "unknown",
+                                "conflict",
+                                "out_of_frame",
+                                "expired",
+                                "revoked",
+                                "superseded",
+                                "invalid"
+                            ]
+                        },
+                        "direction": {"const": "none"}
+                    }
+                },
+                {
+                    "properties": {
+                        "layer": {"const": "policy"},
+                        "code": {"enum": ["allow", "block", "unknown"]},
+                        "direction": {"const": "none"}
+                    }
+                }
+            ]
+        },
+        "set_refs": {"type": "array", "items": {"type": "string"}},
+        "set_ref_records": {"type": "array", "items": {"$ref": "set-ref.schema.json"}},
+        "artifact_refs": {"type": "array", "items": {"type": "string"}},
+        "artifact_ref_records": {"type": "array", "items": {"$ref": "artifact-ref.schema.json"}},
+        "obligation_refs": {"type": "array", "items": {"type": "string"}},
+        "obligation_ref_records": {
+            "type": "array",
+            "items": {"$ref": "obligation-ref.schema.json"}
+        },
+        "reason_refs": {"type": "array", "items": {"type": "string"}},
+        "reason_ref_records": {"type": "array", "items": {"$ref": "#/$defs/typed_reason_ref"}},
+        "blocking_records": {"type": "array", "items": {"$ref": "#/$defs/typed_blocking_record"}},
+        "proof_refs": {"type": "array", "items": {"type": "string"}},
+        "proof_ref_records": {"type": "array", "items": {"$ref": "proof-ref.schema.json"}},
+        "protocol_record_refs": {"type": "array", "items": {"type": "string"}},
+        "ledger_entries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "kind",
+                    "owner_artifact",
+                    "owner_path",
+                    "ref_value",
+                    "target_artifact_id",
+                    "target_path",
+                    "resolved",
+                    "expected_kind",
+                    "expected_semantic_role",
+                    "expected_digest",
+                    "required_stage",
+                    "active_scope_status"
+                ],
+                "properties": {
+                    "kind": {"type": "string"},
+                    "owner_artifact": {"type": "string"},
+                    "owner_path": {"type": "string"},
+                    "ref_value": {"type": "string"},
+                    "target_artifact_id": {"type": "string"},
+                    "target_path": {"type": "string"},
+                    "resolved": {"type": "boolean"},
+                    "expected_kind": {"type": "string"},
+                    "expected_semantic_role": {"type": "string"},
+                    "expected_digest": {"type": "string"},
+                    "required_stage": {"type": "string"},
+                    "active_scope_status": {"type": "string"}
+                }
+            }
+        },
+        "stage_blockers": {"type": "array", "items": {"type": "string"}}
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {"obligation_refs": {"minItems": 1}},
+                "required": ["obligation_refs"]
+            },
+            "then": {"properties": {"obligation_ref_records": {"minItems": 1}}}
+        },
+        {
+            "if": {
+                "properties": {"dominant_status": {"const": "expired"}},
+                "required": ["dominant_status", "authority_outcome"]
+            },
+            "then": {
+                "properties": {
+                    "authority_outcome": {
+                        "properties": {
+                            "layer": {"const": "status"},
+                            "code": {"const": "expired"},
+                            "direction": {"const": "none"}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {"dominant_status": {"const": "revoked"}},
+                "required": ["dominant_status", "authority_outcome"]
+            },
+            "then": {
+                "properties": {
+                    "authority_outcome": {
+                        "properties": {
+                            "layer": {"const": "status"},
+                            "code": {"const": "revoked"},
+                            "direction": {"const": "none"}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {"dominant_status": {"const": "superseded"}},
+                "required": ["dominant_status", "authority_outcome"]
+            },
+            "then": {
+                "properties": {
+                    "authority_outcome": {
+                        "properties": {
+                            "layer": {"const": "status"},
+                            "code": {"const": "superseded"},
+                            "direction": {"const": "none"}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {"dominant_status": {"const": "invalid"}},
+                "required": ["dominant_status", "authority_outcome"]
+            },
+            "then": {
+                "properties": {
+                    "authority_outcome": {
+                        "properties": {
+                            "layer": {"const": "status"},
+                            "code": {"const": "invalid"},
+                            "direction": {"const": "none"}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {"dominant_status": {"const": "conflict"}},
+                "required": ["dominant_status", "authority_outcome"]
+            },
+            "then": {
+                "properties": {
+                    "authority_outcome": {
+                        "properties": {
+                            "layer": {"const": "status"},
+                            "code": {"const": "conflict"},
+                            "direction": {"const": "none"}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {"dominant_status": {"const": "out_of_frame"}},
+                "required": ["dominant_status", "authority_outcome"]
+            },
+            "then": {
+                "properties": {
+                    "authority_outcome": {
+                        "properties": {
+                            "layer": {"const": "status"},
+                            "code": {"const": "out_of_frame"},
+                            "direction": {"const": "none"}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {"dominant_status": {"const": "unknown"}},
+                "required": ["dominant_status", "authority_outcome"]
+            },
+            "then": {
+                "properties": {
+                    "authority_outcome": {
+                        "properties": {
+                            "layer": {"const": "status"},
+                            "code": {"const": "unknown"},
+                            "direction": {"const": "none"}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["authority_outcome"],
+                "properties": {
+                    "authority_outcome": {
+                        "required": ["code"],
+                        "properties": {"code": {"enum": ["allow", "accept", "assert", "active"]}}
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "blocking_records": {"maxItems": 0},
+                    "authority_outcome": {"properties": {"blocking_records": {"maxItems": 0}}}
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["authority_outcome"],
+                "properties": {
+                    "authority_outcome": {
+                        "required": ["code"],
+                        "properties": {
+                            "code": {"not": {"enum": ["allow", "accept", "assert", "active"]}}
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "reason_ref_records": {"minItems": 1},
+                    "authority_outcome": {
+                        "required": ["reason_ref_records"],
+                        "properties": {"reason_ref_records": {"minItems": 1}}
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["authority_outcome"],
+                "properties": {
+                    "authority_outcome": {
+                        "required": ["gate_decision"],
+                        "properties": {"gate_decision": {"enum": ["block", "unknown"]}}
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "reason_ref_records": {"minItems": 1},
+                    "blocking_records": {"minItems": 1},
+                    "authority_outcome": {
+                        "required": ["reason_ref_records", "blocking_records"],
+                        "properties": {
+                            "code": {
+                                "not": {
+                                    "enum": [
+                                        "allow",
+                                        "accept",
+                                        "reject",
+                                        "assert",
+                                        "deny",
+                                        "infeasible",
+                                        "active"
+                                    ]
+                                }
+                            },
+                            "reason_ref_records": {"minItems": 1},
+                            "blocking_records": {"minItems": 1}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["authority_outcome"],
+                "properties": {
+                    "authority_outcome": {
+                        "required": ["code"],
+                        "properties": {
+                            "code": {
+                                "not": {
+                                    "enum": [
+                                        "allow",
+                                        "accept",
+                                        "reject",
+                                        "assert",
+                                        "deny",
+                                        "infeasible",
+                                        "active"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "reason_ref_records": {"minItems": 1},
+                    "blocking_records": {"minItems": 1},
+                    "authority_outcome": {
+                        "required": ["reason_ref_records", "blocking_records"],
+                        "properties": {
+                            "code": {
+                                "not": {
+                                    "enum": [
+                                        "allow",
+                                        "accept",
+                                        "reject",
+                                        "assert",
+                                        "deny",
+                                        "infeasible",
+                                        "active"
+                                    ]
+                                }
+                            },
+                            "reason_ref_records": {"minItems": 1},
+                            "blocking_records": {"minItems": 1}
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["proposed_use_ref"],
+                "not": {
+                    "properties": {
+                        "proposed_use_ref": {
+                            "enum": ["operational", "frame-relative assessment", "control_gating"]
+                        }
+                    },
+                    "required": ["proposed_use_ref"]
+                }
+            },
+            "then": {
+                "properties": {
+                    "completion_admission_ref": {"const": "not-applicable"},
+                    "exact_fiber_assoc_ref": {"const": "not-applicable"},
+                    "fiber_assoc_view_ref": {"const": "not-applicable"},
+                    "adjudication_views_ref": {"const": "not-applicable"},
+                    "agreement_ref": {"const": "not-applicable"}
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["authority_outcome"],
+                "properties": {
+                    "authority_outcome": {
+                        "required": ["code"],
+                        "properties": {"code": {"enum": ["accept", "reject"]}}
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "completion_admission_ref": {"not": {"const": "not-applicable"}},
+                    "exact_fiber_assoc_ref": {"not": {"const": "not-applicable"}},
+                    "fiber_assoc_view_ref": {"not": {"const": "not-applicable"}},
+                    "adjudication_views_ref": {"not": {"const": "not-applicable"}},
+                    "agreement_ref": {"not": {"const": "not-applicable"}}
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/lifecycle-decision.schema.json",
+  "title": "DFCC LifecycleDecision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision",
+    "event_id",
+    "dominant_status",
+    "accepted",
+    "blocking_set",
+    "reason_refs",
+    "blocking_records",
+    "reason_ref_records",
+    "event_manifest_digest",
+    "event_manifest_digest_ref",
+    "signature_verifier_result_ref",
+    "accepted_event_ids",
+    "accepted_event_ids_ref",
+    "trace_class",
+    "trace_class_ref",
+    "causal_cut",
+    "causal_cut_ref",
+    "log_root",
+    "log_root_ref",
+    "dependency_updates",
+    "frame_transfer_ref",
+    "proof_preservation_refs"
+  ],
+  "properties": {
+    "decision": { "type": "string", "minLength": 1 },
+    "event_id": { "type": "string", "minLength": 1 },
+    "dominant_status": { "type": "string", "minLength": 1 },
+    "accepted": { "type": "boolean" },
+    "blocking_set": { "type": "array", "items": { "type": "string" } },
+    "reason_refs": { "type": "array", "items": { "type": "string" } },
+    "blocking_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/blockingRecord" }
+    },
+    "reason_ref_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reasonRef" }
+    },
+    "event_manifest_digest": { "type": ["string", "null"] },
+    "event_manifest_digest_ref": { "$ref": "#/$defs/nullableBoundRef" },
+    "signature_verifier_result_ref": { "$ref": "#/$defs/nullableBoundRef" },
+    "accepted_event_ids": { "type": "array", "items": { "type": "string" } },
+    "accepted_event_ids_ref": { "$ref": "#/$defs/nullableBoundRef" },
+    "trace_class": { "type": "array", "items": { "type": "string" } },
+    "trace_class_ref": { "$ref": "#/$defs/nullableBoundRef" },
+    "causal_cut": { "type": "array", "items": { "type": "string" } },
+    "causal_cut_ref": { "$ref": "#/$defs/nullableBoundRef" },
+    "log_root": { "type": ["string", "null"] },
+    "log_root_ref": { "$ref": "#/$defs/nullableBoundRef" },
+    "dependency_updates": { "type": "array", "items": { "type": "string" } },
+    "frame_transfer_ref": { "type": ["string", "null"] },
+    "proof_preservation_refs": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["accepted"],
+        "properties": { "accepted": { "const": false } }
+      },
+      "then": {
+        "required": ["blocking_records", "reason_ref_records"],
+        "properties": {
+          "blocking_records": { "minItems": 1 },
+          "reason_ref_records": { "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nullableBoundRef": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^(sha(256|384|512):.+|artifact:.+(#/.*)?)$" }
+      ]
+    },
+    "reasonRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason_id",
+        "failure_code",
+        "layer",
+        "source_artifact",
+        "source_path",
+        "message",
+        "digest"
+      ],
+      "properties": {
+        "reason_id": { "type": "string", "minLength": 1 },
+        "failure_code": { "type": "string", "minLength": 1 },
+        "layer": { "type": "string", "minLength": 1 },
+        "source_artifact": { "type": "string", "pattern": "^artifact:.+" },
+        "source_path": { "type": "string", "pattern": "^/.*$" },
+        "message": { "type": "string" },
+        "digest": { "type": "string", "pattern": "^sha(256|384|512):.+" }
+      }
+    },
+    "blockingRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "block_id",
+        "failure_code",
+        "layer",
+        "severity",
+        "reason_ref_records"
+      ],
+      "properties": {
+        "block_id": { "type": "string", "minLength": 1 },
+        "failure_code": { "type": "string", "minLength": 1 },
+        "layer": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "minLength": 1 },
+        "reason_ref_records": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/reasonRef" }
+        }
+      }
+    }
+  }
+}

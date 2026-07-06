@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/agreement.schema.json",
+  "title": "DFCC Agreement",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kernel_direction",
+    "assoc_direction",
+    "frame_direction",
+    "adequacy_direction",
+    "blocking_set",
+    "gate_decision",
+    "agreement_status"
+  ],
+  "properties": {
+    "kernel_direction": { "type": "string" },
+    "assoc_direction": { "type": "string" },
+    "frame_direction": { "type": "string" },
+    "adequacy_direction": { "type": "string" },
+    "blocking_set": { "type": "array" },
+    "gate_decision": { "type": "string" },
+    "agreement_status": { "type": "string" },
+    "reason": { "type": ["string", "null"] }
+  }
+}

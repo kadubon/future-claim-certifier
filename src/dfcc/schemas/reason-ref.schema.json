@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/reason-ref.schema.json",
+  "title": "DFCC ReasonRef",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reason_id", "failure_code", "layer", "source_artifact", "source_path", "message"],
+  "properties": {
+    "reason_id": { "type": "string", "minLength": 1 },
+    "failure_code": { "type": "string", "minLength": 1 },
+    "layer": { "type": "string", "minLength": 1 },
+    "source_artifact": { "type": "string", "minLength": 1 },
+    "source_path": { "type": "string" },
+    "message": { "type": "string", "minLength": 1 },
+    "digest": { "type": ["string", "null"] }
+  }
+}

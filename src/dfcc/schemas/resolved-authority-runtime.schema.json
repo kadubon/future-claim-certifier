@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/resolved-authority-runtime.schema.json",
+  "title": "DFCC ResolvedAuthorityRuntime Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "resolved_reference_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_artifact", "source_path", "target_digest"],
+      "properties": {
+        "source_artifact": { "type": "string", "minLength": 1 },
+        "source_path": { "type": "string", "pattern": "^/.*$" },
+        "target_digest": { "type": "string", "pattern": "^sha(256|384|512):.+" }
+      }
+    }
+  },
+  "required": [
+    "compiled_bundle_ref",
+    "accepted_clause_refs",
+    "artifact_refs",
+    "artifact_ref_records",
+    "ledger_entries",
+    "resolved_obligations",
+    "resolved_obligation_records",
+    "resolved_reason_refs",
+    "resolved_reason_ref_records",
+    "set_ref_records",
+    "proof_refs",
+    "proof_ref_records",
+    "kernel_proof_artifacts",
+    "strict_replay",
+    "synthetic_trust"
+  ],
+  "properties": {
+    "compiled_bundle_ref": { "type": ["string", "null"] },
+    "accepted_clause_refs": { "type": "array", "items": { "type": "string" } },
+    "artifact_refs": { "type": "array", "items": { "type": "string" } },
+    "artifact_ref_records": {
+      "type": "array",
+      "items": { "$ref": "artifact-ref.schema.json" }
+    },
+    "ledger_entries": { "type": "integer", "minimum": 0 },
+    "resolved_obligations": { "type": "array", "items": { "type": "string" } },
+    "resolved_obligation_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resolved_reference_record" }
+    },
+    "resolved_reason_refs": { "type": "array", "items": { "type": "string" } },
+    "resolved_reason_ref_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resolved_reference_record" }
+    },
+    "set_ref_records": {
+      "type": "array",
+      "items": { "$ref": "set-ref.schema.json" }
+    },
+    "proof_refs": { "type": "array", "items": { "type": "string" } },
+    "proof_ref_records": {
+      "type": "array",
+      "items": { "$ref": "proof-ref.schema.json" }
+    },
+    "kernel_proof_artifacts": { "type": "array", "items": { "type": "string" } },
+    "strict_replay": { "type": "boolean" },
+    "synthetic_trust": { "type": "boolean" }
+  }
+}

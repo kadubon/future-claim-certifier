@@ -1,0 +1,55 @@
+{
+  "claim": {
+    "claim_id": "safe-temp",
+    "horizon": 2,
+    "formula": {
+      "op": "G",
+      "a": 0,
+      "b": 2,
+      "child": {
+        "op": "atom",
+        "name": "field_cmp",
+        "args": {
+          "field": "temp",
+          "op": "lte",
+          "value": "80"
+        }
+      }
+    },
+    "scope": ["demo"]
+  },
+  "bundle": {
+    "bundle_id": "finite-demo",
+    "state_space": [
+      { "temp": "70" },
+      { "temp": "75" }
+    ],
+    "initial_states": [
+      { "temp": "70" }
+    ],
+    "transitions": [
+      { "from": { "temp": "70" }, "to": { "temp": "75" } },
+      { "from": { "temp": "75" }, "to": { "temp": "75" } }
+    ],
+    "admissions": ["exact-finite-model"]
+  },
+  "anchor": {
+    "issue_time": "2026-01-01T00:00:00Z",
+    "horizon": 2,
+    "step_seconds": 60
+  },
+  "time_basis": {
+    "clock_id": "utc-demo",
+    "uncertainty_seconds": "0",
+    "source": "example"
+  },
+  "frame": {
+    "frame_id": "demo-frame",
+    "completion_interface_ref": "completion-interface:demo"
+  },
+  "policy": {
+    "version": "demo",
+    "minimum_soundness_grade": 3
+  },
+  "soundness_grade": 3
+}

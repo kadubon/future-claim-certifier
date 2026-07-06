@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/admission-contract.schema.json",
+  "title": "DFCC AdmissionContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "source", "target", "clause", "checker_transcript_ref"],
+  "properties": {
+    "kind": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "minLength": 1 },
+    "target": { "type": "string", "minLength": 1 },
+    "clause": { "type": "object" },
+    "scope": { "type": "array", "items": { "type": "string" } },
+    "horizon": { "type": ["integer", "null"], "minimum": 0 },
+    "frame": { "type": ["string", "null"] },
+    "validity": { "type": "object" },
+    "checker": { "type": "string" },
+    "limits": { "type": "object" },
+    "failure": { "type": "string" },
+    "contract_id": { "type": ["string", "null"] },
+    "uncertainty_model": { "type": ["string", "null"] },
+    "expiry_rule": { "type": ["string", "null"] },
+    "monitor_obligations": { "type": "array", "items": { "type": "string" } },
+    "obligation_refs": { "type": "array", "items": { "type": "string" } },
+    "reason_refs": { "type": "array", "items": { "type": "string" } },
+    "checker_transcript_ref": {
+      "type": "string",
+      "pattern": "^(artifact:.+|sha(256|384|512):.+)$"
+    },
+    "reference_digest": { "type": ["string", "null"] },
+    "monitor_evidence_ref": { "type": ["string", "null"], "minLength": 1 },
+    "monitor_completeness_ref": { "type": ["string", "null"], "minLength": 1 }
+  }
+}

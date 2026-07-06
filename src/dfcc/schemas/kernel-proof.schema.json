@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/kernel-proof.schema.json",
+  "title": "DFCC KernelProof",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "bound_ref": {
+      "type": "string",
+      "pattern": "^(artifact:.+|sha(256|384|512):.+)$"
+    },
+    "nullable_bound_ref": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/bound_ref" }
+      ]
+    }
+  },
+  "required": ["backend_identity", "proof_kind", "proof_status"],
+  "properties": {
+    "backend_identity": { "type": "string" },
+    "proof_kind": { "type": "string" },
+    "proof_status": { "type": "string" },
+    "expected_verdict": { "type": ["string", "null"] },
+    "feasibility": { "type": ["string", "null"] },
+    "inclusion": { "type": ["string", "null"] },
+    "disjointness": { "type": ["string", "null"] },
+    "witness_refs": { "type": "array", "items": { "$ref": "#/$defs/bound_ref" } },
+    "infeasibility_ref": { "$ref": "#/$defs/nullable_bound_ref" },
+    "inclusion_ref": { "$ref": "#/$defs/nullable_bound_ref" },
+    "disjointness_ref": { "$ref": "#/$defs/nullable_bound_ref" },
+    "artifact_conflict_refs": { "type": "array", "items": { "$ref": "#/$defs/bound_ref" } },
+    "evidence_refs": { "type": "array", "items": { "$ref": "#/$defs/bound_ref" } },
+    "reason_refs": { "type": "array", "items": { "type": "string" } },
+    "reason_ref_records": {
+      "type": "array",
+      "items": { "$ref": "reason-ref.schema.json" },
+      "default": []
+    }
+  }
+}

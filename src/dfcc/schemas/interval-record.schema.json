@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/interval-record.schema.json",
+  "title": "DFCC IntervalRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lower", "upper", "lower_closed", "upper_closed"],
+  "properties": {
+    "lower": { "type": "object" },
+    "upper": { "type": "object" },
+    "lower_closed": { "type": "boolean" },
+    "upper_closed": { "type": "boolean" },
+    "uncertainty_ref": { "type": ["string", "null"] },
+    "basis_ref": { "type": ["string", "null"] }
+  }
+}

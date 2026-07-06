@@ -1,0 +1,21 @@
+{
+  "status_time": "2026-01-01T00:00:00Z",
+  "validity_status": "pass",
+  "completion_admission": {
+    "tag": "CompletionAdmission",
+    "completion_status": "pass",
+    "admission_source": "example",
+    "checker_result": "pass",
+    "completion_obligations": ["demo-completion"]
+  },
+  "fiber_assoc_view": {
+    "fiber_status": "positive",
+    "fiber_obligations": ["demo-association"]
+  },
+  "adjudication_views": {
+    "prefix": "accept",
+    "usage": "accept",
+    "target": "accept"
+  },
+  "adequacy_direction": "positive"
+}

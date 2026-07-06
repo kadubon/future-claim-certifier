@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/guard-record.schema.json",
+  "title": "DFCC GuardRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["guard_name", "status"],
+  "properties": {
+    "guard_name": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["pass", "fail", "unknown", "conflict", "out_of_frame", "expired"] },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "reason_refs": { "type": "array", "items": { "$ref": "reason-ref.schema.json" } }
+  }
+}

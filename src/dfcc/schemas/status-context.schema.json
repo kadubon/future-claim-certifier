@@ -1,0 +1,186 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://dfcc.local/schemas/status-context.schema.json",
+    "title": "DFCC StatusContext",
+    "type": "object",
+    "additionalProperties": false,
+    "$defs": {
+        "bound_ref": {"type": "string", "pattern": "^(artifact:.+|sha(256|384|512):.+)$"},
+        "nullable_bound_ref": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/bound_ref"}]},
+        "lifecycle_event": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["event_id", "certificate_id", "time", "logical_clock", "kind"],
+            "properties": {
+                "event_id": {"type": "string", "minLength": 1},
+                "certificate_id": {"type": "string", "minLength": 1},
+                "time": {"type": "string", "minLength": 1},
+                "logical_clock": {"type": "integer", "minimum": 0},
+                "kind": {"type": "string", "minLength": 1},
+                "payload": {"type": "object"},
+                "actor": {"type": ["string", "null"]},
+                "inputs": {"type": "array", "items": {"type": "string"}},
+                "hashes": {"type": "array", "items": {"type": "string"}},
+                "signature": {"type": ["string", "null"]},
+                "manifest_digest": {"type": ["string", "null"]},
+                "signature_verifier_result": {
+                    "type": ["string", "null"],
+                    "enum": ["pass", "accepted", "fail", "conflict", "unknown", null]
+                },
+                "manifest_digest_status": {
+                    "anyOf": [{"$ref": "#/$defs/accepted_proof_evidence"}, {"type": "null"}]
+                },
+                "event_manifest_digest_status": {
+                    "anyOf": [{"$ref": "#/$defs/accepted_proof_evidence"}, {"type": "null"}]
+                },
+                "previous_event_commitment": {"type": ["string", "null"]},
+                "ancestry": {"type": "array", "items": {"type": "string"}},
+                "confluence_proof_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "signature_verifier_result_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "signature_verifier_result_status": {
+                    "anyOf": [{"$ref": "#/$defs/accepted_proof_evidence"}, {"type": "null"}]
+                },
+                "log_root_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "causal_cut_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "trace_class_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "event_manifest_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "manifest_digest_ref": {"$ref": "#/$defs/nullable_bound_ref"}
+            }
+        },
+        "accepted_proof_evidence": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["artifact_ref"],
+            "allOf": [
+                {
+                    "anyOf": [
+                        {"required": ["status"]},
+                        {"required": ["proof_status"]},
+                        {"required": ["checker_status"]}
+                    ]
+                },
+                {
+                    "anyOf": [
+                        {"required": ["artifact_digest"]},
+                        {"required": ["digest"]},
+                        {"required": ["reference_digest"]}
+                    ]
+                }
+            ],
+            "properties": {
+                "artifact_ref": {"$ref": "#/$defs/bound_ref"},
+                "source_artifact": {"$ref": "#/$defs/bound_ref"},
+                "source_path": {"type": "string", "pattern": "^/.*$"},
+                "artifact_digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                "digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                "reference_digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                "proof_kind": {"type": "string", "minLength": 1},
+                "status": {"type": "string"},
+                "proof_status": {"type": "string"},
+                "checker_status": {"type": "string"},
+                "payload": {"type": "object"}
+            }
+        },
+        "proof_evidence_ref": {
+            "anyOf": [{"$ref": "#/$defs/bound_ref"}, {"$ref": "#/$defs/accepted_proof_evidence"}]
+        },
+        "observation_record": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "measurement_relation_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "representation_relation_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "calibration_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "latency_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "dependency_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "event_order_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "measurement_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "measurement_relation_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "measurement_relation": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                        "relation_id": {"type": "string"},
+                        "accepted": {"type": ["boolean", "string"]},
+                        "calibration_ref": {"$ref": "#/$defs/bound_ref"},
+                        "latency_ref": {"$ref": "#/$defs/bound_ref"},
+                        "dependency_ref": {"$ref": "#/$defs/bound_ref"},
+                        "event_order_ref": {"$ref": "#/$defs/bound_ref"},
+                        "proof_ref": {"$ref": "#/$defs/bound_ref"},
+                        "proof_refs": {"type": "array", "items": {"$ref": "#/$defs/bound_ref"}}
+                    }
+                },
+                "representation_relation": {
+                    "oneOf": [
+                        {"$ref": "representation-relation.schema.json"},
+                        {"type": "array", "items": {"$ref": "representation-relation.schema.json"}}
+                    ]
+                },
+                "representation_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "prefix_adjudication_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "target_adjudication_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "adequacy_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"}
+            }
+        }
+    },
+    "required": ["status_time"],
+    "properties": {
+        "status_time": {"type": "string", "minLength": 1},
+        "event_log": {"type": "array", "items": {"$ref": "#/$defs/lifecycle_event"}},
+        "dependency_snapshot": {"type": "object", "additionalProperties": {"type": "string"}},
+        "observation_records": {"type": "array", "items": {"$ref": "#/$defs/observation_record"}},
+        "observation_policy": {"type": "object", "additionalProperties": true},
+        "frame": {"type": "object", "additionalProperties": true},
+        "completion_policy": {"type": "object", "additionalProperties": true},
+        "target_condition": {"type": "object", "additionalProperties": true},
+        "prefix_view": {"type": ["object", "null"], "additionalProperties": true},
+        "validity_status": {"enum": ["pass", "unknown", "conflict", "expired"]},
+        "completion_admission": {"type": ["object", "null"], "additionalProperties": true},
+        "fiber_assoc_view": {"type": ["object", "null"], "additionalProperties": true},
+        "adjudication_views": {"type": "object", "additionalProperties": {"type": "string"}},
+        "adequacy_direction": {"type": "string"},
+        "confluence_proof": {
+            "anyOf": [
+                {"$ref": "#/$defs/bound_ref"},
+                {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "required": ["proof_kind", "artifact_ref"],
+                    "allOf": [
+                        {
+                            "anyOf": [
+                                {"required": ["status"]},
+                                {"required": ["proof_status"]},
+                                {"required": ["checker_status"]}
+                            ]
+                        },
+                        {
+                            "anyOf": [
+                                {"required": ["artifact_digest"]},
+                                {"required": ["digest"]},
+                                {"required": ["reference_digest"]}
+                            ]
+                        }
+                    ],
+                    "properties": {
+                        "proof_kind": {"type": "string", "minLength": 1},
+                        "status": {"type": "string"},
+                        "proof_status": {"type": "string"},
+                        "checker_status": {"type": "string"},
+                        "artifact_ref": {"$ref": "#/$defs/bound_ref"},
+                        "source_artifact": {"$ref": "#/$defs/bound_ref"},
+                        "source_path": {"type": "string", "pattern": "^/.*$"},
+                        "artifact_digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                        "digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                        "reference_digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                        "event_ids": {"type": "array", "items": {"type": "string"}},
+                        "accepted_event_ids": {"type": "array", "items": {"type": "string"}},
+                        "covered_event_ids": {"type": "array", "items": {"type": "string"}}
+                    }
+                },
+                {"type": "null"}
+            ]
+        },
+        "artifact_bundle": {"type": "object", "additionalProperties": true}
+    }
+}

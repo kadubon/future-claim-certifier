@@ -1,0 +1,99 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://dfcc.local/schemas/observation-cut.schema.json",
+    "title": "DFCC ObservationCut",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "records",
+        "status_time",
+        "time_basis_ref",
+        "event_order_ref",
+        "dependency_snapshot"
+    ],
+    "anyOf": [{"required": ["frame_id", "policy_ref"]}, {"required": ["frame"]}],
+    "$defs": {
+        "bound_ref": {"type": "string", "pattern": "^(artifact:.+|sha(256|384|512):.+)$"},
+        "nullable_bound_ref": {
+            "type": ["string", "null"],
+            "pattern": "^(artifact:.+|sha(256|384|512):.+)$"
+        },
+        "accepted_proof_evidence": {
+            "type": "object",
+            "additionalProperties": true,
+            "anyOf": [
+                {"required": ["artifact_ref"]},
+                {"required": ["source_artifact", "source_path"]},
+                {"required": ["artifact_digest"]},
+                {"required": ["digest"]},
+                {"required": ["reference_digest"]}
+            ],
+            "properties": {
+                "artifact_ref": {"$ref": "#/$defs/bound_ref"},
+                "source_artifact": {"$ref": "#/$defs/bound_ref"},
+                "source_path": {"type": "string", "pattern": "^/.*$"},
+                "artifact_digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                "digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                "reference_digest": {"type": "string", "pattern": "^sha(256|384|512):.+"},
+                "proof_kind": {"type": "string", "minLength": 1},
+                "status": {"type": "string"},
+                "proof_status": {"type": "string"},
+                "checker_status": {"type": "string"},
+                "payload": {"type": "object"}
+            }
+        },
+        "proof_evidence_ref": {
+            "anyOf": [{"$ref": "#/$defs/bound_ref"}, {"$ref": "#/$defs/accepted_proof_evidence"}]
+        },
+        "measurement_relation": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "relation_id": {"type": "string"},
+                "accepted": {"type": ["boolean", "string"]},
+                "calibration_ref": {"$ref": "#/$defs/bound_ref"},
+                "latency_ref": {"$ref": "#/$defs/bound_ref"},
+                "dependency_ref": {"$ref": "#/$defs/bound_ref"},
+                "event_order_ref": {"$ref": "#/$defs/bound_ref"},
+                "proof_ref": {"$ref": "#/$defs/bound_ref"},
+                "proof_refs": {"type": "array", "items": {"$ref": "#/$defs/bound_ref"}}
+            }
+        },
+        "representation_relation": {
+            "oneOf": [
+                {"$ref": "representation-relation.schema.json"},
+                {"type": "array", "items": {"$ref": "representation-relation.schema.json"}}
+            ]
+        },
+        "observation_record": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "measurement_relation_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "representation_relation_ref": {"$ref": "#/$defs/nullable_bound_ref"},
+                "calibration_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "latency_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "dependency_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "event_order_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "measurement_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "measurement_relation_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "measurement_relation": {"$ref": "#/$defs/measurement_relation"},
+                "representation_relation": {"$ref": "#/$defs/representation_relation"},
+                "representation_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "prefix_adjudication_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "target_adjudication_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"},
+                "adequacy_proof_ref": {"$ref": "#/$defs/proof_evidence_ref"}
+            }
+        }
+    },
+    "properties": {
+        "records": {"type": "array", "items": {"$ref": "#/$defs/observation_record"}},
+        "status_time": {"type": "string"},
+        "time_basis_ref": {"type": "string"},
+        "event_order_ref": {"type": "string"},
+        "dependency_snapshot": {"type": "object", "additionalProperties": {"type": "string"}},
+        "frame_id": {"type": "string"},
+        "policy_ref": {"type": "string"},
+        "frame": {"type": "object", "additionalProperties": true}
+    }
+}

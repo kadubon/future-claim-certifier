@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/obligation-ref.schema.json",
+  "title": "DFCC ObligationRef",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["obligation_id", "kind", "status"],
+  "properties": {
+    "obligation_id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["pass", "fail", "unknown", "waived", "inactive", "not_checked"] },
+    "scope": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "checker": { "type": ["string", "null"] },
+    "expiry": { "type": ["string", "null"] },
+    "reason_refs": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "source_artifact": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "source_path": {
+      "type": ["string", "null"],
+      "pattern": "^(|/.*)$"
+    },
+    "digest": {
+      "type": ["string", "null"],
+      "pattern": "^sha(256|384|512):.+"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "waived" } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["reason_refs"],
+        "properties": { "reason_refs": { "minItems": 1 } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "pass" } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["source_artifact", "source_path", "digest"],
+        "properties": {
+          "source_artifact": {
+            "type": "string",
+            "pattern": "^artifact:.+"
+          },
+          "source_path": {
+            "type": "string",
+            "pattern": "^/.+"
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha(256|384|512):.+"
+          }
+        }
+      }
+    }
+  ]
+}

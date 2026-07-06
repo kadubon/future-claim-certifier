@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/replay-stage-trace.schema.json",
+  "title": "DFCC ReplayStageTrace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "stage",
+    "status",
+    "record_refs",
+    "artifact_refs",
+    "artifact_ref_records",
+    "proof_refs",
+    "proof_ref_records",
+    "blocking_records",
+    "reason_refs",
+    "reason_ref_records"
+  ],
+  "properties": {
+    "stage": {
+      "enum": [
+        "Parse",
+        "Canonicalize",
+        "SchemaValidate",
+        "DigestCheck",
+        "ReferenceResolve",
+        "ProfileResolve",
+        "Replay",
+        "GuardEvaluate",
+        "KernelCheck",
+        "AuthorityEmit"
+      ]
+    },
+    "status": {
+      "enum": ["pass", "reject_input", "invalid_artifact", "unknown", "conflict"]
+    },
+    "record_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "artifact_ref_records": {
+      "type": "array",
+      "items": { "$ref": "artifact-ref.schema.json" }
+    },
+    "proof_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "proof_ref_records": {
+      "type": "array",
+      "items": { "$ref": "proof-ref.schema.json" }
+    },
+    "blocking_set": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "blocking_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/blockingRecord" }
+    },
+    "reason_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reason_ref_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reasonRef" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["status"],
+        "not": { "properties": { "status": { "const": "pass" } } }
+      },
+      "then": {
+        "properties": {
+          "blocking_records": { "minItems": 1 },
+          "reason_ref_records": { "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "reasonRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason_id",
+        "failure_code",
+        "layer",
+        "source_artifact",
+        "source_path",
+        "message",
+        "digest"
+      ],
+      "properties": {
+        "reason_id": { "type": "string", "minLength": 1 },
+        "failure_code": { "type": "string", "minLength": 1 },
+        "layer": { "type": "string", "minLength": 1 },
+        "source_artifact": { "type": "string" },
+        "source_path": { "type": "string" },
+        "message": { "type": "string" },
+        "digest": { "type": ["string", "null"] }
+      }
+    },
+    "blockingRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "block_id",
+        "failure_code",
+        "layer",
+        "severity",
+        "reason_ref_records"
+      ],
+      "properties": {
+        "block_id": { "type": "string", "minLength": 1 },
+        "failure_code": { "type": "string", "minLength": 1 },
+        "layer": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "minLength": 1 },
+        "reason_ref_records": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reasonRef" }
+        }
+      }
+    }
+  }
+}

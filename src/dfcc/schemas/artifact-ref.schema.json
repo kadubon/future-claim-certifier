@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/artifact-ref.schema.json",
+  "title": "DFCC ArtifactRef",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_id",
+    "artifact_type",
+    "schema_profile",
+    "canonicalization",
+    "media_type",
+    "digest_algorithm",
+    "digest_value",
+    "retrieval_policy",
+    "immutability_policy"
+  ],
+  "properties": {
+    "artifact_id": { "type": "string", "minLength": 1 },
+    "artifact_type": { "type": "string", "minLength": 1 },
+    "schema_profile": { "type": "string", "minLength": 1 },
+    "canonicalization": { "type": "string", "minLength": 1 },
+    "media_type": { "type": "string", "minLength": 1 },
+    "schema_digest": { "type": ["string", "null"] },
+    "canonicalization_digest": { "type": ["string", "null"] },
+    "digest_algorithm": { "enum": ["sha256", "sha384", "sha512"] },
+    "digest_value": { "type": ["string", "null"] },
+    "content_uri": { "type": ["string", "null"] },
+    "retrieval_policy": { "type": "string" },
+    "immutability_policy": { "type": "string" },
+    "provenance_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "semantic_role": { "type": ["string", "null"] },
+    "dependency_labels": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

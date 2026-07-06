@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/failure-record.schema.json",
+  "title": "DFCC FailureRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "failure_id",
+    "code",
+    "layer",
+    "stage",
+    "severity",
+    "blocking",
+    "remediation",
+    "reason_refs",
+    "reason_ref_records"
+  ],
+  "properties": {
+    "failure_id": { "type": "string", "minLength": 1 },
+    "code": { "type": "string", "minLength": 1 },
+    "layer": { "type": "string", "minLength": 1 },
+    "stage": { "type": "string", "minLength": 1 },
+    "severity": { "type": "string", "minLength": 1 },
+    "blocking": { "type": "boolean" },
+    "remediation": { "type": ["string", "null"] },
+    "reason_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reason_ref_records": {
+      "type": "array",
+      "items": { "$ref": "reason-ref.schema.json" }
+    }
+  }
+}

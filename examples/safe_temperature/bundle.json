@@ -1,0 +1,15 @@
+{
+  "bundle_id": "finite-demo",
+  "state_space": [
+    { "temp": "70" },
+    { "temp": "75" }
+  ],
+  "initial_states": [
+    { "temp": "70" }
+  ],
+  "transitions": [
+    { "from": { "temp": "70" }, "to": { "temp": "75" } },
+    { "from": { "temp": "75" }, "to": { "temp": "75" } }
+  ],
+  "admissions": ["exact-finite-model"]
+}

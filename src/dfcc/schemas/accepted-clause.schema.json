@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/accepted-clause.schema.json",
+  "title": "DFCC AcceptedClause",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "clause_id",
+    "target",
+    "clause",
+    "evidence_ref",
+    "contract_ref",
+    "checker_transcript_ref",
+    "obligation_refs",
+    "reason_refs",
+    "validity_status",
+    "monitor_status"
+  ],
+  "properties": {
+    "clause_id": { "type": "string", "minLength": 1 },
+    "target": { "type": "string", "minLength": 1 },
+    "clause": { "type": "object" },
+    "evidence_ref": { "type": "string", "minLength": 1 },
+    "contract_ref": { "type": "string", "minLength": 1 },
+    "checker_transcript_ref": {
+      "type": "string",
+      "pattern": "^(artifact:.+|sha(256|384|512):.+)$"
+    },
+    "obligation_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "anyOf": [
+          { "type": "string", "minLength": 1 },
+          { "$ref": "obligation-ref.schema.json" }
+        ]
+      }
+    },
+    "obligation_ref_records": {
+      "type": "array",
+      "items": { "$ref": "obligation-ref.schema.json" },
+      "default": []
+    },
+    "reason_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "allOf": [
+          { "$ref": "reason-ref.schema.json" },
+          {
+            "type": "object",
+            "required": ["digest"],
+            "properties": {
+              "source_artifact": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_path": {
+                "type": "string",
+                "pattern": "^/.+$"
+              },
+              "digest": {
+                "type": "string",
+                "pattern": "^sha(256|384|512):.+"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "validity_status": { "enum": ["pass", "unknown", "conflict", "expired"] },
+    "monitor_status": { "enum": ["pass", "unknown", "conflict", "silent"] },
+    "monitor_required": { "type": "boolean" },
+    "monitor_evidence_ref": { "type": ["string", "null"], "minLength": 1 },
+    "monitor_completeness_ref": { "type": ["string", "null"], "minLength": 1 }
+  }
+}

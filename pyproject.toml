@@ -1,0 +1,120 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "future-claim-certifier"
+version = "1.0.0"
+description = "Replayable Python protocol engine for validating time-bound future claims from canonical artifacts."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [
+  { name = "DFCC contributors" }
+]
+keywords = [
+  "agent-safety",
+  "artifact-bundles",
+  "auditability",
+  "authority-validation",
+  "canonical-artifacts",
+  "canonical-json",
+  "future-claims",
+  "json-schema",
+  "proof-checking",
+  "protocol-engine",
+  "runtime-verification"
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed"
+]
+dependencies = [
+  "jsonschema>=4.23.0",
+  "referencing>=0.35.1"
+]
+
+[project.urls]
+Documentation = "https://github.com/kadubon/future-claim-certifier#readme"
+Homepage = "https://doi.org/10.5281/zenodo.21199529"
+Issues = "https://github.com/kadubon/future-claim-certifier/issues"
+Paper = "https://doi.org/10.5281/zenodo.21199529"
+Source = "https://github.com/kadubon/future-claim-certifier"
+
+[project.scripts]
+dfcc = "dfcc.cli:main"
+
+[dependency-groups]
+dev = [
+  "bandit[toml]>=1.7.10",
+  "mypy>=1.11.2",
+  "pip-audit>=2.7.3",
+  "pytest>=8.3.2",
+  "pytest-cov>=5.0.0",
+  "ruff>=0.6.8",
+  "types-jsonschema>=4.23.0.20240813"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dfcc"]
+artifacts = ["src/dfcc/schemas/*.json", "src/dfcc/golden/*.json"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+  "/docs",
+  "/examples",
+  "/README.md",
+  "/LICENSE",
+  "/NOTICE",
+  "/SECURITY.md",
+  "/CONTRIBUTING.md",
+  "/CODE_OF_CONDUCT.md",
+  "/pyproject.toml"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["src/dfcc/schemas/*.json"]
+
+[tool.ruff.lint]
+select = ["A", "B", "C4", "E", "F", "I", "N", "PT", "RUF", "S", "SIM", "UP", "W"]
+ignore = [
+  "S101",
+  "S105"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["dfcc"]
+strict = true
+warn_unreachable = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=dfcc --cov-report=term-missing --cov-report=xml"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["dfcc"]
+
+[tool.coverage.report]
+fail_under = 90
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101", "B105"]

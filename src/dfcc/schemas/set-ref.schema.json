@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/set-ref.schema.json",
+  "title": "DFCC SetRef",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "carrier_ref",
+    "encoding_kind",
+    "constraint_ref",
+    "approximation_kind",
+    "soundness_ref",
+    "digest"
+  ],
+  "properties": {
+    "carrier_ref": { "type": "string", "minLength": 1 },
+    "encoding_kind": { "type": "string", "minLength": 1 },
+    "constraint_ref": { "type": "string", "minLength": 1 },
+    "approximation_kind": { "type": "string", "minLength": 1 },
+    "soundness_ref": { "type": "string", "minLength": 1 },
+    "digest": { "type": "string", "minLength": 1 },
+    "members": { "type": "array" }
+  }
+}

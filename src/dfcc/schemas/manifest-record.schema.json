@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/manifest-record.schema.json",
+  "title": "DFCC ManifestRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest_id", "root_artifact_id", "artifact_refs"],
+  "properties": {
+    "manifest_id": { "type": "string", "minLength": 1 },
+    "root_artifact_id": { "type": "string", "minLength": 1 },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "artifact-ref.schema.json" }
+        ]
+      }
+    },
+    "dependency_order": { "type": "array", "items": { "type": "string" } },
+    "semantic_roles": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "fixed_point_admissions": { "type": "array", "items": { "type": "string" } },
+    "manifest_digest": { "type": ["string", "null"] }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/pipeline-report.schema.json",
+  "title": "DFCC PipelineReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bundle_id",
+    "profile",
+    "stage_results",
+    "resolved_refs",
+    "unresolved_refs",
+    "ledger_entries",
+    "artifact_refs",
+    "artifact_ref_records",
+    "proof_refs",
+    "proof_ref_records",
+    "stage_artifacts",
+    "protocol_records",
+    "failure_records",
+    "reason_refs",
+    "reason_ref_records",
+    "stage_blockers"
+  ],
+  "properties": {
+    "bundle_id": { "type": "string" },
+    "profile": { "type": "string" },
+    "stage_results": {
+      "type": "array",
+      "items": { "$ref": "validation-result.schema.json" }
+    },
+    "resolved_refs": { "type": "array" },
+    "resolved_obligations": { "type": "array" },
+    "resolved_reason_refs": { "type": "array" },
+    "unresolved_refs": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [{ "type": "string" }, { "type": "string" }],
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "ledger_entries": {
+      "type": "array",
+      "items": { "$ref": "reference-ledger-entry.schema.json" }
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "artifact_ref_records": {
+      "type": "array",
+      "items": { "$ref": "artifact-ref.schema.json" }
+    },
+    "accepted_clause_records": {
+      "type": "array",
+      "items": { "$ref": "accepted-clause.schema.json" }
+    },
+    "trust_assumptions": { "type": "array" },
+    "compiled_bundle_ref": { "type": ["string", "null"] },
+    "guard_records": { "type": "array" },
+    "proof_refs": { "type": "array", "items": { "type": "string" } },
+    "proof_ref_records": {
+      "type": "array",
+      "items": { "$ref": "proof-ref.schema.json" }
+    },
+    "authority_runtime_summary": {
+      "anyOf": [
+        { "$ref": "resolved-authority-runtime.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "stage_artifacts": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "Parse",
+          "Canonicalize",
+          "SchemaValidate",
+          "DigestCheck",
+          "ReferenceResolve",
+          "ProfileResolve",
+          "Replay",
+          "GuardEvaluate",
+          "KernelCheck",
+          "AuthorityEmit"
+        ]
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "protocol_records": {
+      "type": "array",
+      "items": { "$ref": "protocol-record-artifact.schema.json" }
+    },
+    "replay_trace": {
+      "anyOf": [{ "$ref": "replay-trace.schema.json" }, { "type": "null" }]
+    },
+    "kernel_view_ref": { "type": ["string", "null"] },
+    "observation_context_ref": { "type": ["string", "null"] },
+    "agreement_ref": { "type": ["string", "null"] },
+    "runtime_summary_digest": { "type": ["string", "null"] },
+    "failure_records": {
+      "type": "array",
+      "items": { "$ref": "failure-record.schema.json" }
+    },
+    "reason_refs": { "type": "array", "items": { "type": "string" } },
+    "reason_ref_records": {
+      "type": "array",
+      "items": { "$ref": "reason-ref.schema.json" }
+    },
+    "stage_blockers": {
+      "type": "array",
+      "items": { "$ref": "failure-record.schema.json" }
+    },
+    "authority_view": { "type": ["object", "null"] },
+    "authority_outcome_digest": { "type": ["string", "null"] }
+  }
+}

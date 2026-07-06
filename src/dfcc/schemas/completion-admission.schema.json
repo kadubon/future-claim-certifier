@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/completion-admission.schema.json",
+  "title": "DFCC CompletionAdmission",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tag", "completion_status"],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "completion_status": { "const": "pass" } },
+        "required": ["completion_status"]
+      },
+      "then": {
+        "required": [
+          "admission_source",
+          "expiry",
+          "uncertainty_model",
+          "reference_digest",
+          "checker_result",
+          "checker_transcript_ref"
+        ],
+        "properties": {
+          "admission_source": { "type": "string", "minLength": 1 },
+          "expiry": { "type": "string", "minLength": 1 },
+          "uncertainty_model": { "type": "string", "minLength": 1 },
+          "reference_digest": {
+            "type": "string",
+            "pattern": "^sha(256|384|512):.+$"
+          },
+          "checker_result": { "enum": ["pass", "accepted"] },
+          "checker_transcript_ref": {
+            "type": "string",
+            "pattern": "^(artifact:.+|sha(256|384|512):.+)$"
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "tag": { "const": "CompletionAdmission" },
+    "completion_status": { "enum": ["pass", "unknown", "conflict", "expired"] },
+    "c_out_ref": { "type": ["string", "null"] },
+    "c_in_ref": { "type": ["string", "null"] },
+    "admission_source": { "type": ["string", "null"] },
+    "expiry": { "type": ["string", "null"] },
+    "uncertainty_model": { "type": ["string", "null"] },
+    "reference_digest": { "type": ["string", "null"] },
+    "checker_result": { "type": ["string", "null"] },
+    "checker_transcript_ref": {
+      "type": ["string", "null"],
+      "pattern": "^(artifact:.+|sha(256|384|512):.+)$"
+    },
+    "completion_obligations": { "type": "array", "items": { "type": "string" } },
+    "reason_refs": { "type": "array", "items": { "$ref": "reason-ref.schema.json" } }
+  }
+}

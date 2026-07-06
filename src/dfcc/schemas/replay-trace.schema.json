@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/replay-trace.schema.json",
+  "title": "DFCC ReplayTrace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["stage_traces", "stage_artifacts", "protocol_records"],
+  "properties": {
+    "stage_traces": {
+      "type": "array",
+      "items": { "$ref": "replay-stage-trace.schema.json" }
+    },
+    "stage_artifacts": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "Parse",
+          "Canonicalize",
+          "SchemaValidate",
+          "DigestCheck",
+          "ReferenceResolve",
+          "ProfileResolve",
+          "Replay",
+          "GuardEvaluate",
+          "KernelCheck",
+          "AuthorityEmit"
+        ]
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "protocol_records": {
+      "type": "array",
+      "items": { "$ref": "protocol-record-artifact.schema.json" }
+    },
+    "kernel_view_ref": { "type": ["string", "null"] },
+    "observation_context_ref": { "type": ["string", "null"] },
+    "agreement_ref": { "type": ["string", "null"] },
+    "runtime_summary_digest": { "type": ["string", "null"] }
+  }
+}

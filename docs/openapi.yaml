@@ -1,0 +1,2552 @@
+openapi: 3.1.0
+info:
+  title: Dynamic Future-Claim Certification API
+  version: 1.0.0
+  license:
+    name: Apache-2.0
+paths:
+  /certify:
+    post:
+      summary: Issue an immutable DFCC certificate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [claim, bundle, anchor, time_basis]
+      responses:
+        "200":
+          description: IssueCertificate or ValidationResult
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/IssueCertificate"
+                  - $ref: "#/components/schemas/ValidationResult"
+  /check:
+    post:
+      summary: Recompute status-time authority
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [certificate, proposed_use, status_context]
+              properties:
+                certificate:
+                  type: object
+                proposed_use:
+                  $ref: "#/components/schemas/ProposedUse"
+                status_context:
+                  $ref: "#/components/schemas/StatusContext"
+      responses:
+        "200":
+          description: StatusAuthorityView or ValidationResult
+  /replay-status:
+    post:
+      summary: Replay lifecycle and status authority from three records or an ArtifactBundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              oneOf:
+                - required: [certificate, proposed_use, status_context]
+                - required: [bundle]
+              properties:
+                certificate: {}
+                proposed_use:
+                  $ref: "#/components/schemas/ProposedUse"
+                status_context:
+                  $ref: "#/components/schemas/StatusContext"
+                bundle:
+                  $ref: "#/components/schemas/ArtifactBundle"
+      responses:
+        "200":
+          description: StatusAuthorityView, PipelineReport, or ValidationResult with artifact refs, typed ledger entries, proof refs, and stage blockers on non-allow status views
+  /validate-bundle:
+    post:
+      summary: Validate an artifact bundle or compile a finite assumption bundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bundle]
+              properties:
+                bundle:
+                  oneOf:
+                    - $ref: "#/components/schemas/ArtifactBundle"
+                    - type: object
+                horizon:
+                  type: integer
+                  minimum: 0
+                  description: Required only when bundle is a finite assumption bundle rather than an ArtifactBundle.
+                full_replay:
+                  type: boolean
+                  default: false
+                  description: Require ArtifactBundle validation to replay through authority recomputation.
+      responses:
+        "200":
+          description: PipelineReport with authority_view, authority_outcome_digest, resolved authority runtime summary, proof refs, typed reference-ledger entries, accepted clauses, trust assumptions, guard records, or finite compilation summary
+  /schema/list:
+    get:
+      summary: List bundled DFCC JSON Schemas
+      responses:
+        "200":
+          description: Schema name list
+  /schema/export/{name}:
+    get:
+      summary: Export a bundled DFCC JSON Schema
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: JSON Schema document
+  /conformance/run:
+    post:
+      summary: Run packaged or supplied DFCC golden conformance cases
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                case_dir:
+                  type: string
+                  description: Optional local case directory for CLI-compatible runners
+                suite:
+                  type: string
+                  description: Optional suite filter. Use primary for protocol fixtures or legacy for all legacy compatibility suites.
+      responses:
+        "200":
+          description: GoldenResult list fixed by required expected_digest canonical keys by default. Legacy compatibility cases must opt out with canonical_equality_required=false, and artifact-bundle cases, including packaged authority fixtures, materialize to ArtifactBundle full replay unless full_replay=false is explicit.
+  /digest:
+    post:
+      summary: Compute canonical JSON digest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        "200":
+          description: Digest string
+components:
+  schemas:
+    ArtifactBundle:
+      type: object
+      required: [bundle_id, manifest, artifacts]
+    IssueCertificate:
+      type: object
+      additionalProperties: false
+      required:
+        - certificate_id
+        - schema_profile_ref
+        - canonicalization_profile_ref
+        - manifest_digest
+        - claim_ref
+        - anchor_ref
+        - time_basis_ref
+        - event_order_commitment_ref
+        - assessment_frame_ref
+        - assumption_bundle_ref
+        - initial_context_ref
+        - representation_interface_ref
+        - completion_interface_ref
+        - compiled_semantics_ref
+        - set_refs
+        - set_ref_records
+        - proof_refs
+        - proof_ref_records
+        - kernel_verdict_at_issue
+        - soundness_grade
+        - dependency_graph_ref
+        - artifact_refs
+        - artifact_ref_records
+        - obligation_refs
+        - obligation_ref_records
+        - provenance_refs
+      properties:
+        certificate_id:
+          type: string
+          minLength: 1
+        schema_profile_ref:
+          type: string
+        canonicalization_profile_ref:
+          type: string
+        manifest_digest:
+          type: string
+        claim_ref:
+          type: string
+        anchor_ref:
+          type: string
+        time_basis_ref:
+          type: string
+        event_order_commitment_ref:
+          type: string
+        assessment_frame_ref:
+          type: string
+        assumption_bundle_ref:
+          type: string
+        initial_context_ref:
+          type: string
+        representation_interface_ref:
+          type: string
+        completion_interface_ref:
+          type: string
+        compiled_semantics_ref:
+          type: string
+        set_refs:
+          type: array
+          items:
+            type: string
+        set_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/SetRef"
+        proof_refs:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        proof_ref_records:
+          type: array
+          minItems: 1
+          items:
+            allOf:
+              - $ref: "#/components/schemas/ProofRefRecord"
+              - type: object
+                required: [source_artifact, source_path, digest, status]
+                properties:
+                  source_artifact:
+                    type: string
+                    pattern: "^artifact:.+"
+                  source_path:
+                    type: string
+                    pattern: "^/.*$"
+                  digest:
+                    type: string
+                    pattern: "^sha(256|384|512):.+"
+                  status:
+                    enum: [accepted, pass]
+        kernel_verdict_at_issue:
+          enum: [assert, deny, infeasible, abstain, unknown, conflict, invalid]
+        soundness_grade:
+          type: integer
+          minimum: 1
+          maximum: 5
+        dependency_graph_ref:
+          type: string
+        artifact_refs:
+          type: array
+          items:
+            type: string
+        artifact_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactRef"
+        obligation_refs:
+          type: array
+          items:
+            type: string
+        obligation_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObligationRefRecord"
+        provenance_refs:
+          type: array
+          items:
+            type: string
+        claim_source:
+          type: object
+        bundle_source:
+          type: object
+        anchor_source:
+          type: object
+        time_basis_source:
+          type: object
+        frame:
+          type: object
+        policy:
+          type: object
+    PipelineReport:
+      type: object
+      required:
+        - bundle_id
+        - profile
+        - stage_results
+        - artifact_refs
+        - artifact_ref_records
+        - ledger_entries
+        - proof_refs
+        - proof_ref_records
+        - stage_artifacts
+        - protocol_records
+        - failure_records
+        - reason_refs
+        - reason_ref_records
+        - stage_blockers
+      properties:
+        bundle_id:
+          type: string
+        profile:
+          type: string
+        stage_results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationResult"
+        artifact_refs:
+          type: array
+          items:
+            type: string
+        artifact_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactRef"
+        ledger_entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferenceLedgerEntry"
+        accepted_clause_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/AcceptedClause"
+        proof_refs:
+          type: array
+          items:
+            type: string
+        proof_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProofRef"
+        stage_artifacts:
+          type: object
+          propertyNames:
+            enum: [Parse, Canonicalize, SchemaValidate, DigestCheck, ReferenceResolve, ProfileResolve, Replay, GuardEvaluate, KernelCheck, AuthorityEmit]
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        protocol_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProtocolRecordArtifact"
+        replay_trace:
+          oneOf:
+            - $ref: "#/components/schemas/ReplayTrace"
+            - type: "null"
+        kernel_view_ref:
+          type: [string, "null"]
+        observation_context_ref:
+          type: [string, "null"]
+        agreement_ref:
+          type: [string, "null"]
+        runtime_summary_digest:
+          type: [string, "null"]
+        authority_runtime_summary:
+          oneOf:
+            - $ref: "#/components/schemas/ResolvedAuthorityRuntime"
+            - type: "null"
+        authority_outcome_digest:
+          type: [string, "null"]
+        failure_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailureRecord"
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonRefRecord"
+        stage_blockers:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailureRecord"
+    ProfileResolution:
+      type: object
+      required:
+        - requested_profile
+        - implemented_profile
+        - version_relation
+        - enabled_features
+        - closed_world
+        - extension_mapping
+        - status
+        - reason_refs
+      properties:
+        requested_profile:
+          type: string
+        implemented_profile:
+          type: [string, "null"]
+        version_relation:
+          enum: [exact, compatible, unsupported, unknown]
+        enabled_features:
+          type: array
+          items:
+            type: string
+        closed_world:
+          type: boolean
+        extension_mapping:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          enum: [pass, unsupported_profile, checker_unknown, schema_invalid]
+        reason_refs:
+          type: array
+          items:
+            type: string
+      allOf:
+        - if:
+            properties:
+              status:
+                const: unsupported_profile
+            required: [status]
+          then:
+            properties:
+              implemented_profile:
+                type: "null"
+              version_relation:
+                const: unsupported
+              enabled_features:
+                maxItems: 0
+              extension_mapping:
+                maxProperties: 0
+              reason_refs:
+                minItems: 1
+        - if:
+            properties:
+              status:
+                enum: [checker_unknown, schema_invalid]
+            required: [status]
+          then:
+            properties:
+              reason_refs:
+                minItems: 1
+    StatusAuthorityView:
+      type: object
+      required:
+        - certificate_id
+        - schema_profile_ref
+        - canonicalization_profile_ref
+        - manifest_digest
+        - validation_result_ref
+        - proposed_use_ref
+        - fold_context_ref
+        - status_coordinates_ref
+        - blocking_set_ref
+        - dominant_status
+        - status_observation_context_ref
+        - prefix_view_ref
+        - completion_admission_ref
+        - residual_context_ref
+        - validity_view_ref
+        - kernel_view_ref
+        - exact_fiber_assoc_ref
+        - fiber_assoc_view_ref
+        - adjudication_views_ref
+        - agreement_ref
+        - gate_decision_ref
+        - authority_outcome
+        - set_refs
+        - set_ref_records
+        - artifact_refs
+        - artifact_ref_records
+        - obligation_refs
+        - obligation_ref_records
+        - reason_refs
+        - reason_ref_records
+        - blocking_records
+        - proof_refs
+        - proof_ref_records
+        - ledger_entries
+        - stage_blockers
+      properties:
+        certificate_id:
+          type: string
+        schema_profile_ref:
+          type: string
+        canonicalization_profile_ref:
+          type: string
+        manifest_digest:
+          type: string
+        validation_result_ref:
+          type: string
+        proposed_use_ref:
+          type: string
+        fold_context_ref:
+          type: string
+        status_coordinates_ref:
+          type: string
+        blocking_set_ref:
+          type: string
+        dominant_status:
+          type: string
+        status_observation_context_ref:
+          type: string
+        prefix_view_ref:
+          type: string
+        completion_admission_ref:
+          type: string
+        residual_context_ref:
+          type: string
+        validity_view_ref:
+          type: string
+        kernel_view_ref:
+          type: string
+        exact_fiber_assoc_ref:
+          type: string
+        fiber_assoc_view_ref:
+          type: string
+        adjudication_views_ref:
+          type: string
+        agreement_ref:
+          type: string
+        gate_decision_ref:
+          type: string
+        authority_outcome:
+          $ref: "#/components/schemas/AuthorityOutcome"
+        set_refs:
+          type: array
+          items:
+            type: string
+        set_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/SetRef"
+        artifact_refs:
+          type: array
+          items:
+            type: string
+        artifact_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactRef"
+        obligation_refs:
+          type: array
+          items:
+            type: string
+        obligation_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObligationRefRecord"
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/TypedReasonRefRecord"
+        blocking_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorityBlockingRecord"
+        proof_refs:
+          type: array
+          items:
+            type: string
+        proof_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProofRefRecord"
+        ledger_entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferenceLedgerEntry"
+        stage_blockers:
+          type: array
+          items:
+            type: string
+      allOf:
+        - if:
+            required: [obligation_refs]
+            properties:
+              obligation_refs:
+                minItems: 1
+          then:
+            properties:
+              obligation_ref_records:
+                minItems: 1
+        - if:
+            required: [dominant_status, authority_outcome]
+            properties:
+              dominant_status:
+                const: expired
+          then:
+            properties:
+              authority_outcome:
+                properties:
+                  layer:
+                    const: status
+                  code:
+                    const: expired
+                  direction:
+                    const: none
+        - if:
+            required: [dominant_status, authority_outcome]
+            properties:
+              dominant_status:
+                const: revoked
+          then:
+            properties:
+              authority_outcome:
+                properties:
+                  layer:
+                    const: status
+                  code:
+                    const: revoked
+                  direction:
+                    const: none
+        - if:
+            required: [dominant_status, authority_outcome]
+            properties:
+              dominant_status:
+                const: superseded
+          then:
+            properties:
+              authority_outcome:
+                properties:
+                  layer:
+                    const: status
+                  code:
+                    const: superseded
+                  direction:
+                    const: none
+        - if:
+            required: [dominant_status, authority_outcome]
+            properties:
+              dominant_status:
+                const: invalid
+          then:
+            properties:
+              authority_outcome:
+                properties:
+                  layer:
+                    const: status
+                  code:
+                    const: invalid
+                  direction:
+                    const: none
+        - if:
+            required: [dominant_status, authority_outcome]
+            properties:
+              dominant_status:
+                const: conflict
+          then:
+            properties:
+              authority_outcome:
+                properties:
+                  layer:
+                    const: status
+                  code:
+                    const: conflict
+                  direction:
+                    const: none
+        - if:
+            required: [dominant_status, authority_outcome]
+            properties:
+              dominant_status:
+                const: out_of_frame
+          then:
+            properties:
+              authority_outcome:
+                properties:
+                  layer:
+                    const: status
+                  code:
+                    const: out_of_frame
+                  direction:
+                    const: none
+        - if:
+            required: [dominant_status, authority_outcome]
+            properties:
+              dominant_status:
+                const: unknown
+          then:
+            properties:
+              authority_outcome:
+                properties:
+                  layer:
+                    const: status
+                  code:
+                    const: unknown
+                  direction:
+                    const: none
+        - if:
+            required: [authority_outcome]
+            properties:
+              authority_outcome:
+                required: [code]
+                properties:
+                  code:
+                    not:
+                      enum: [allow, accept, assert, active]
+          then:
+            properties:
+              reason_ref_records:
+                minItems: 1
+              authority_outcome:
+                required: [reason_ref_records]
+                properties:
+                  reason_ref_records:
+                    minItems: 1
+        - if:
+            required: [authority_outcome]
+            properties:
+              authority_outcome:
+                required: [gate_decision]
+                properties:
+                  gate_decision:
+                    enum: [block, unknown]
+          then:
+            properties:
+              reason_ref_records:
+                minItems: 1
+              blocking_records:
+                minItems: 1
+              authority_outcome:
+                required: [reason_ref_records, blocking_records]
+                properties:
+                  code:
+                    not:
+                      enum: [allow, accept, reject, assert, deny, infeasible, active]
+                  reason_ref_records:
+                    minItems: 1
+                  blocking_records:
+                    minItems: 1
+        - if:
+            required: [authority_outcome]
+            properties:
+              authority_outcome:
+                required: [code]
+                properties:
+                  code:
+                    not:
+                      enum: [allow, accept, reject, assert, deny, infeasible, active]
+          then:
+            properties:
+              reason_ref_records:
+                minItems: 1
+              blocking_records:
+                minItems: 1
+              authority_outcome:
+                required: [reason_ref_records, blocking_records]
+                properties:
+                  code:
+                    not:
+                      enum: [allow, accept, reject, assert, deny, infeasible, active]
+                  reason_ref_records:
+                    minItems: 1
+                  blocking_records:
+                    minItems: 1
+        - if:
+            required: [proposed_use_ref]
+            not:
+              required: [proposed_use_ref]
+              properties:
+                proposed_use_ref:
+                  enum: [operational, frame-relative assessment, control_gating]
+          then:
+            properties:
+              completion_admission_ref:
+                const: not-applicable
+              exact_fiber_assoc_ref:
+                const: not-applicable
+              fiber_assoc_view_ref:
+                const: not-applicable
+              adjudication_views_ref:
+                const: not-applicable
+              agreement_ref:
+                const: not-applicable
+        - if:
+            required: [authority_outcome]
+            properties:
+              authority_outcome:
+                required: [code]
+                properties:
+                  code:
+                    enum: [accept, reject]
+          then:
+            properties:
+              completion_admission_ref:
+                not:
+                  const: not-applicable
+              exact_fiber_assoc_ref:
+                not:
+                  const: not-applicable
+              fiber_assoc_view_ref:
+                not:
+                  const: not-applicable
+              adjudication_views_ref:
+                not:
+                  const: not-applicable
+              agreement_ref:
+                not:
+                  const: not-applicable
+    ProposedUse:
+      type: object
+      required: [mode, claim, horizon, anchor]
+      properties:
+        mode:
+          type: string
+        claim:
+          type: string
+        horizon:
+          type: integer
+          minimum: 0
+        anchor:
+          type: string
+        scope:
+          type: array
+          items:
+            type: string
+        consumer:
+          type: [string, "null"]
+        policy:
+          type: [string, "null"]
+        frame:
+          type: [string, "null"]
+        context:
+          type: object
+    ProofEvidenceRef:
+      oneOf:
+        - type: string
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        - type: object
+          required: [artifact_ref]
+          allOf:
+            - anyOf:
+                - required: [status]
+                - required: [proof_status]
+                - required: [checker_status]
+            - anyOf:
+                - required: [artifact_digest]
+                - required: [digest]
+                - required: [reference_digest]
+          additionalProperties: true
+          properties:
+            artifact_ref:
+              type: string
+              pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+            source_artifact:
+              type: string
+              pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+            source_path:
+              type: string
+              pattern: "^/.*$"
+            artifact_digest:
+              type: string
+              pattern: "^sha(256|384|512):.+"
+            digest:
+              type: string
+              pattern: "^sha(256|384|512):.+"
+            reference_digest:
+              type: string
+              pattern: "^sha(256|384|512):.+"
+            proof_kind:
+              type: string
+            status:
+              type: string
+            proof_status:
+              type: string
+            checker_status:
+              type: string
+            payload:
+              type: object
+    AcceptedProofEvidenceStatus:
+      type: object
+      required: [artifact_ref]
+      allOf:
+        - anyOf:
+            - required: [status]
+            - required: [proof_status]
+            - required: [checker_status]
+        - anyOf:
+            - required: [artifact_digest]
+            - required: [digest]
+            - required: [reference_digest]
+      additionalProperties: true
+      properties:
+        artifact_ref:
+          type: string
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        source_artifact:
+          type: string
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        source_path:
+          type: string
+          pattern: "^/.*$"
+        artifact_digest:
+          type: string
+          pattern: "^sha(256|384|512):.+"
+        digest:
+          type: string
+          pattern: "^sha(256|384|512):.+"
+        reference_digest:
+          type: string
+          pattern: "^sha(256|384|512):.+"
+        proof_kind:
+          type: string
+        status:
+          type: string
+        proof_status:
+          type: string
+        checker_status:
+          type: string
+        payload:
+          type: object
+    LifecycleEvent:
+      type: object
+      additionalProperties: true
+      required: [event_id, certificate_id, time, logical_clock, kind]
+      properties:
+        event_id:
+          type: string
+        certificate_id:
+          type: string
+        time:
+          type: string
+        logical_clock:
+          type: integer
+          minimum: 0
+        kind:
+          type: string
+        payload:
+          type: object
+        actor:
+          type: [string, "null"]
+        inputs:
+          type: array
+          items:
+            type: string
+        hashes:
+          type: array
+          items:
+            type: string
+        signature:
+          type: [string, "null"]
+        manifest_digest:
+          type: [string, "null"]
+        manifest_digest_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        event_manifest_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        manifest_digest_status:
+          anyOf:
+            - $ref: "#/components/schemas/AcceptedProofEvidenceStatus"
+            - type: "null"
+        event_manifest_digest_status:
+          anyOf:
+            - $ref: "#/components/schemas/AcceptedProofEvidenceStatus"
+            - type: "null"
+        signature_verifier_result:
+          type: [string, "null"]
+          enum: [pass, accepted, fail, conflict, unknown, null]
+        signature_verifier_result_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        signature_verifier_result_status:
+          anyOf:
+            - $ref: "#/components/schemas/AcceptedProofEvidenceStatus"
+            - type: "null"
+        previous_event_commitment:
+          type: [string, "null"]
+        confluence_proof_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        log_root_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        causal_cut_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        trace_class_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        ancestry:
+          type: array
+          items:
+            type: string
+    StatusContext:
+      type: object
+      required: [status_time]
+      properties:
+        status_time:
+          type: string
+        event_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/LifecycleEvent"
+        dependency_snapshot:
+          type: object
+          additionalProperties:
+            type: string
+        observation_records:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              measurement_relation_ref:
+                type: [string, "null"]
+                pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+              representation_relation_ref:
+                type: [string, "null"]
+                pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+              calibration_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              latency_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              dependency_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              event_order_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              measurement_proof_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              measurement_relation_proof_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              measurement_relation:
+                type: object
+                additionalProperties: true
+                properties:
+                  relation_id:
+                    type: string
+                  accepted:
+                    type: [boolean, string]
+                  calibration_ref:
+                    type: string
+                    pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+                  latency_ref:
+                    type: string
+                    pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+                  dependency_ref:
+                    type: string
+                    pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+                  event_order_ref:
+                    type: string
+                    pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+                  proof_ref:
+                    type: string
+                    pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+                  proof_refs:
+                    type: array
+                    items:
+                      type: string
+                      pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+              representation_relation:
+                oneOf:
+                  - $ref: "#/components/schemas/RepresentationRelation"
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/RepresentationRelation"
+              representation_proof_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              prefix_adjudication_proof_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              target_adjudication_proof_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+              adequacy_proof_ref:
+                $ref: "#/components/schemas/ProofEvidenceRef"
+        observation_policy:
+          type: object
+        frame:
+          type: object
+        completion_policy:
+          type: object
+        target_condition:
+          type: object
+        prefix_view:
+          type: [object, "null"]
+        validity_status:
+          enum: [pass, unknown, conflict, expired]
+        completion_admission:
+          type: [object, "null"]
+        fiber_assoc_view:
+          type: [object, "null"]
+        adjudication_views:
+          type: object
+          additionalProperties:
+            type: string
+        adequacy_direction:
+          type: string
+        confluence_proof:
+          oneOf:
+            - type: string
+              pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+            - type: object
+              required: [proof_kind, artifact_ref]
+              allOf:
+                - anyOf:
+                    - required: [status]
+                    - required: [proof_status]
+                    - required: [checker_status]
+                - anyOf:
+                    - required: [artifact_digest]
+                    - required: [digest]
+                    - required: [reference_digest]
+              additionalProperties: true
+              properties:
+                proof_kind:
+                  type: string
+                status:
+                  type: string
+                proof_status:
+                  type: string
+                checker_status:
+                  type: string
+                artifact_ref:
+                  type: string
+                  pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+                source_artifact:
+                  type: string
+                  pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+                source_path:
+                  type: string
+                  pattern: "^/.*$"
+                artifact_digest:
+                  type: string
+                  pattern: "^sha(256|384|512):.+"
+                digest:
+                  type: string
+                  pattern: "^sha(256|384|512):.+"
+                reference_digest:
+                  type: string
+                  pattern: "^sha(256|384|512):.+"
+                event_ids:
+                  type: array
+                  items:
+                    type: string
+                accepted_event_ids:
+                  type: array
+                  items:
+                    type: string
+                covered_event_ids:
+                  type: array
+                  items:
+                    type: string
+            - type: "null"
+    AuthorityOutcome:
+      type: object
+      required:
+        - layer
+        - code
+        - direction
+        - gate_decision
+        - reason_refs
+        - reason_ref_records
+        - blocking_records
+      properties:
+        layer:
+          type: string
+          enum: [issue, represented, operational, status, policy]
+        code:
+          type: string
+        direction:
+          type: string
+          enum: [positive, negative, infeasible, neutral, none]
+        gate_decision:
+          type: string
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/TypedReasonRefRecord"
+        blocking_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorityBlockingRecord"
+      oneOf:
+        - properties:
+            layer:
+              const: issue
+            code:
+              enum: [assert, deny, infeasible, abstain, unknown, conflict, invalid]
+          allOf:
+            - if:
+                properties:
+                  code:
+                    const: assert
+              then:
+                properties:
+                  direction:
+                    const: positive
+            - if:
+                properties:
+                  code:
+                    const: deny
+              then:
+                properties:
+                  direction:
+                    const: negative
+            - if:
+                properties:
+                  code:
+                    const: infeasible
+              then:
+                properties:
+                  direction:
+                    const: infeasible
+            - if:
+                properties:
+                  code:
+                    const: abstain
+              then:
+                properties:
+                  direction:
+                    const: neutral
+            - if:
+                properties:
+                  code:
+                    enum: [unknown, conflict, invalid]
+              then:
+                properties:
+                  direction:
+                    const: none
+        - properties:
+            layer:
+              const: represented
+            code:
+              enum: [assert, deny, infeasible, abstain, unknown, conflict, invalid]
+          allOf:
+            - if:
+                properties:
+                  code:
+                    const: assert
+              then:
+                properties:
+                  direction:
+                    const: positive
+            - if:
+                properties:
+                  code:
+                    const: deny
+              then:
+                properties:
+                  direction:
+                    const: negative
+            - if:
+                properties:
+                  code:
+                    const: infeasible
+              then:
+                properties:
+                  direction:
+                    const: infeasible
+            - if:
+                properties:
+                  code:
+                    const: abstain
+              then:
+                properties:
+                  direction:
+                    const: neutral
+            - if:
+                properties:
+                  code:
+                    enum: [unknown, conflict, invalid]
+              then:
+                properties:
+                  direction:
+                    const: none
+        - properties:
+            layer:
+              const: operational
+            code:
+              enum: [accept, reject, indeterminate, unknown, conflict, out_of_frame]
+          allOf:
+            - if:
+                properties:
+                  code:
+                    const: accept
+              then:
+                properties:
+                  direction:
+                    const: positive
+            - if:
+                properties:
+                  code:
+                    const: reject
+              then:
+                properties:
+                  direction:
+                    const: negative
+            - if:
+                properties:
+                  code:
+                    const: indeterminate
+              then:
+                properties:
+                  direction:
+                    const: neutral
+            - if:
+                properties:
+                  code:
+                    enum: [unknown, conflict, out_of_frame]
+              then:
+                properties:
+                  direction:
+                    const: none
+        - properties:
+            layer:
+              const: status
+            code:
+              enum: [active, unknown, conflict, out_of_frame, expired, revoked, superseded, invalid]
+            direction:
+              const: none
+        - properties:
+            layer:
+              const: policy
+            code:
+              enum: [allow, block, unknown]
+            direction:
+              const: none
+    ReasonRefRecord:
+      type: object
+      required: [reason_id, failure_code, layer, source_artifact, source_path, message]
+      properties:
+        reason_id:
+          type: string
+        failure_code:
+          type: string
+        layer:
+          type: string
+        source_artifact:
+          type: string
+        source_path:
+          type: string
+        message:
+          type: string
+        digest:
+          type: [string, "null"]
+    TypedReasonRefRecord:
+      allOf:
+        - $ref: "#/components/schemas/ReasonRefRecord"
+        - type: object
+          required: [digest]
+          properties:
+            source_artifact:
+              type: string
+              pattern: "^artifact:.+"
+            source_path:
+              type: string
+              pattern: "^/.*$"
+            digest:
+              type: string
+              pattern: "^sha(256|384|512):.+"
+    AuthorityBlockingRecord:
+      type: object
+      required:
+        - block_id
+        - failure_code
+        - layer
+        - severity
+        - reason_refs
+        - reason_ref_records
+      properties:
+        block_id:
+          type: string
+        failure_code:
+          type: string
+        layer:
+          type: string
+        severity:
+          type: string
+        reason_refs:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/TypedReasonRefRecord"
+    BlockingRecord:
+      type: object
+      required:
+        - block_id
+        - failure_code
+        - layer
+        - severity
+        - reason_refs
+        - reason_ref_records
+      properties:
+        block_id:
+          type: string
+        failure_code:
+          type: string
+        layer:
+          type: string
+        severity:
+          type: string
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonRefRecord"
+    FailureRecord:
+      type: object
+      required:
+        - failure_id
+        - code
+        - layer
+        - stage
+        - severity
+        - blocking
+        - remediation
+        - reason_refs
+        - reason_ref_records
+      properties:
+        failure_id:
+          type: string
+        code:
+          type: string
+        layer:
+          type: string
+        stage:
+          enum: [Parse, Canonicalize, SchemaValidate, DigestCheck, ReferenceResolve, ProfileResolve, Replay, GuardEvaluate, KernelCheck, AuthorityEmit]
+        severity:
+          type: string
+        blocking:
+          type: boolean
+        remediation:
+          type: [string, "null"]
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonRefRecord"
+    ObligationRefRecord:
+      type: object
+      required: [obligation_id, kind, status]
+      allOf:
+        - if:
+            properties:
+              status:
+                const: waived
+            required: [status]
+          then:
+            required: [reason_refs]
+            properties:
+              reason_refs:
+                minItems: 1
+        - if:
+            properties:
+              status:
+                const: pass
+            required: [status]
+          then:
+            required: [source_artifact, source_path, digest]
+            properties:
+              source_artifact:
+                type: string
+                pattern: "^artifact:.+"
+              source_path:
+                type: string
+                pattern: "^/.+"
+              digest:
+                type: string
+                pattern: "^sha(256|384|512):.+"
+      properties:
+        obligation_id:
+          type: string
+        kind:
+          type: string
+        status:
+          enum: [pass, fail, unknown, waived, inactive, not_checked]
+        scope:
+          type: array
+          items:
+            type: string
+        checker:
+          type: [string, "null"]
+        expiry:
+          type: [string, "null"]
+        reason_refs:
+          type: array
+          items:
+            type: string
+        source_artifact:
+          type: [string, "null"]
+          minLength: 1
+        source_path:
+          type: [string, "null"]
+          pattern: "^(|/.*)$"
+        digest:
+          type: [string, "null"]
+          pattern: "^sha(256|384|512):.+"
+    ProofRefRecord:
+      type: object
+      required: [proof_id, proof_kind, source_path, status]
+      properties:
+        proof_id:
+          type: string
+        proof_kind:
+          type: string
+        artifact_ref:
+          type: [string, "null"]
+        source_artifact:
+          anyOf:
+            - type: "null"
+            - type: string
+              pattern: "^artifact:.+"
+        source_path:
+          type: string
+          pattern: "^(|/.*)$"
+        digest:
+          type: [string, "null"]
+        status:
+          type: string
+      allOf:
+        - if:
+            properties:
+              status:
+                enum: [accepted, pass]
+            required: [status]
+          then:
+            properties:
+              digest:
+                type: string
+                pattern: "^sha(256|384|512):.+"
+            required: [digest]
+    ReplayTrace:
+      type: object
+      required: [stage_traces, stage_artifacts, protocol_records]
+      properties:
+        stage_traces:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReplayStageTrace"
+        stage_artifacts:
+          type: object
+          propertyNames:
+            enum: [Parse, Canonicalize, SchemaValidate, DigestCheck, ReferenceResolve, ProfileResolve, Replay, GuardEvaluate, KernelCheck, AuthorityEmit]
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        protocol_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProtocolRecordArtifact"
+        kernel_view_ref:
+          type: [string, "null"]
+        observation_context_ref:
+          type: [string, "null"]
+        agreement_ref:
+          type: [string, "null"]
+        runtime_summary_digest:
+          type: [string, "null"]
+    SetRef:
+      type: object
+      required: [carrier_ref, encoding_kind, constraint_ref, approximation_kind, soundness_ref, digest]
+      additionalProperties: false
+      properties:
+        carrier_ref:
+          type: string
+          minLength: 1
+        encoding_kind:
+          type: string
+          minLength: 1
+        constraint_ref:
+          type: string
+          minLength: 1
+        approximation_kind:
+          type: string
+          minLength: 1
+        soundness_ref:
+          type: string
+          minLength: 1
+        digest:
+          type: string
+          minLength: 1
+        members:
+          type: array
+    ReplayStageTrace:
+      type: object
+      required: [stage, status, record_refs, artifact_refs, artifact_ref_records, proof_refs, proof_ref_records, blocking_records, reason_refs, reason_ref_records]
+      allOf:
+        - if:
+            required: [status]
+            not:
+              properties:
+                status:
+                  const: pass
+          then:
+            properties:
+              blocking_records:
+                minItems: 1
+              reason_ref_records:
+                minItems: 1
+      properties:
+        stage:
+          enum: [Parse, Canonicalize, SchemaValidate, DigestCheck, ReferenceResolve, ProfileResolve, Replay, GuardEvaluate, KernelCheck, AuthorityEmit]
+        status:
+          enum: [pass, reject_input, invalid_artifact, unknown, conflict]
+        record_refs:
+          type: array
+          items:
+            type: string
+        artifact_refs:
+          type: array
+          items:
+            type: string
+        artifact_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactRef"
+        proof_refs:
+          type: array
+          items:
+            type: string
+        proof_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProofRefRecord"
+        blocking_set:
+          type: array
+          items:
+            type: string
+        blocking_records:
+          type: array
+          items:
+            type: object
+            required: [block_id, failure_code, layer, severity, reason_ref_records]
+            properties:
+              block_id:
+                type: string
+              failure_code:
+                type: string
+              layer:
+                type: string
+              severity:
+                type: string
+              reason_ref_records:
+                type: array
+                items:
+                  type: object
+                  required: [reason_id, failure_code, layer, source_artifact, source_path, message, digest]
+                  properties:
+                    reason_id:
+                      type: string
+                    failure_code:
+                      type: string
+                    layer:
+                      type: string
+                    source_artifact:
+                      type: string
+                    source_path:
+                      type: string
+                    message:
+                      type: string
+                    digest:
+                      type: [string, "null"]
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            type: object
+            required: [reason_id, failure_code, layer, source_artifact, source_path, message, digest]
+            properties:
+              reason_id:
+                type: string
+              failure_code:
+                type: string
+              layer:
+                type: string
+              source_artifact:
+                type: string
+              source_path:
+                type: string
+              message:
+                type: string
+              digest:
+                type: [string, "null"]
+    ProtocolRecordArtifact:
+      type: object
+      required:
+        - record_id
+        - record_kind
+        - stage
+        - payload
+        - artifact_refs
+        - artifact_ref_records
+        - proof_refs
+        - proof_ref_records
+        - reason_refs
+        - reason_ref_records
+        - digest
+      properties:
+        record_id:
+          type: string
+        record_kind:
+          type: string
+        stage:
+          enum: [Parse, Canonicalize, SchemaValidate, DigestCheck, ReferenceResolve, ProfileResolve, Replay, GuardEvaluate, KernelCheck, AuthorityEmit]
+        payload:
+          type: object
+        artifact_refs:
+          type: array
+          items:
+            type: string
+        artifact_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactRef"
+        proof_refs:
+          type: array
+          items:
+            type: string
+        proof_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProofRefRecord"
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonRefRecord"
+        digest:
+          type: string
+          pattern: "^sha(256|384|512):.+"
+    NullableBoundRef:
+      nullable: true
+      oneOf:
+        - type: "null"
+        - type: string
+          pattern: "^(sha(256|384|512):.+|artifact:.+(#/.*)?)$"
+    LifecycleDecision:
+      type: object
+      required:
+        - decision
+        - event_id
+        - dominant_status
+        - accepted
+        - blocking_set
+        - reason_refs
+        - blocking_records
+        - reason_ref_records
+        - event_manifest_digest
+        - event_manifest_digest_ref
+        - signature_verifier_result_ref
+        - accepted_event_ids
+        - accepted_event_ids_ref
+        - trace_class
+        - trace_class_ref
+        - causal_cut
+        - causal_cut_ref
+        - log_root
+        - log_root_ref
+        - dependency_updates
+        - frame_transfer_ref
+        - proof_preservation_refs
+      allOf:
+        - if:
+            required: [accepted]
+            properties:
+              accepted:
+                const: false
+          then:
+            required: [blocking_records, reason_ref_records]
+            properties:
+              blocking_records:
+                minItems: 1
+              reason_ref_records:
+                minItems: 1
+      properties:
+        decision:
+          type: string
+        event_id:
+          type: string
+        dominant_status:
+          type: string
+        accepted:
+          type: boolean
+        blocking_set:
+          type: array
+          items:
+            type: string
+        reason_refs:
+          type: array
+          items:
+            type: string
+        blocking_records:
+          type: array
+          items:
+            type: object
+            required: [block_id, failure_code, layer, severity, reason_ref_records]
+            properties:
+              block_id:
+                type: string
+              failure_code:
+                type: string
+              layer:
+                type: string
+              severity:
+                type: string
+              reason_ref_records:
+                type: array
+                minItems: 1
+                items:
+                  $ref: "#/components/schemas/TypedReasonRefRecord"
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/TypedReasonRefRecord"
+        event_manifest_digest:
+          type: [string, "null"]
+        event_manifest_digest_ref:
+          $ref: "#/components/schemas/NullableBoundRef"
+        signature_verifier_result_ref:
+          $ref: "#/components/schemas/NullableBoundRef"
+        accepted_event_ids:
+          type: array
+          items:
+            type: string
+        accepted_event_ids_ref:
+          $ref: "#/components/schemas/NullableBoundRef"
+        trace_class:
+          type: array
+          items:
+            type: string
+        trace_class_ref:
+          $ref: "#/components/schemas/NullableBoundRef"
+        causal_cut:
+          type: array
+          items:
+            type: string
+        causal_cut_ref:
+          $ref: "#/components/schemas/NullableBoundRef"
+        log_root:
+          type: [string, "null"]
+        log_root_ref:
+          $ref: "#/components/schemas/NullableBoundRef"
+        dependency_updates:
+          type: array
+          items:
+            type: string
+        frame_transfer_ref:
+          type: [string, "null"]
+        proof_preservation_refs:
+          type: array
+          items:
+            type: string
+    ValidationResult:
+      type: object
+      required: [stage, status, failure_records, artifact_refs, reason_refs, reason_ref_records]
+      allOf:
+        - if:
+            required: [status]
+            not:
+              properties:
+                status:
+                  const: pass
+          then:
+            properties:
+              failure_records:
+                minItems: 1
+              reason_ref_records:
+                minItems: 1
+      properties:
+        stage:
+          type: string
+        status:
+          enum: [pass, reject_input, invalid_artifact, unknown, conflict]
+        failure_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailureRecord"
+        artifact_refs:
+          type: array
+          items:
+            type: string
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonRefRecord"
+    ReferenceLedgerEntry:
+      type: object
+      required:
+        - ref_value
+        - kind
+        - owner_artifact
+        - owner_path
+        - target_artifact_id
+        - target_path
+        - required
+        - resolved
+        - required_stage
+        - active_scope_status
+      properties:
+        ref_value:
+          type: string
+        kind:
+          type: string
+        owner_artifact:
+          type: string
+        owner_path:
+          type: string
+        target_artifact_id:
+          type: string
+        target_path:
+          type: string
+        target_digest:
+          type: [string, "null"]
+        semantic_role:
+          type: [string, "null"]
+        expected_kind:
+          type: [string, "null"]
+        expected_semantic_role:
+          type: [string, "null"]
+        expected_digest:
+          type: [string, "null"]
+        required_stage:
+          type: string
+        active_scope_status:
+          type: string
+        required:
+          type: boolean
+        resolved:
+          type: boolean
+    ResolvedAuthorityRuntime:
+      type: object
+      required:
+        - compiled_bundle_ref
+        - accepted_clause_refs
+        - artifact_refs
+        - artifact_ref_records
+        - ledger_entries
+        - resolved_obligations
+        - resolved_obligation_records
+        - resolved_reason_refs
+        - resolved_reason_ref_records
+        - set_ref_records
+        - proof_refs
+        - proof_ref_records
+        - kernel_proof_artifacts
+        - strict_replay
+        - synthetic_trust
+      properties:
+        compiled_bundle_ref:
+          type: [string, "null"]
+        accepted_clause_refs:
+          type: array
+          items:
+            type: string
+        artifact_refs:
+          type: array
+          items:
+            type: string
+        artifact_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtifactRef"
+        ledger_entries:
+          type: integer
+          minimum: 0
+        resolved_obligations:
+          type: array
+          items:
+            type: string
+        resolved_obligation_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResolvedReferenceRecord"
+        resolved_reason_refs:
+          type: array
+          items:
+            type: string
+        resolved_reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResolvedReferenceRecord"
+        set_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/SetRef"
+        proof_refs:
+          type: array
+          items:
+            type: string
+        proof_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProofRefRecord"
+        kernel_proof_artifacts:
+          type: array
+          items:
+            type: string
+        strict_replay:
+          type: boolean
+        synthetic_trust:
+          type: boolean
+    ResolvedReferenceRecord:
+      type: object
+      required: [source_artifact, source_path, target_digest]
+      additionalProperties: false
+      properties:
+        source_artifact:
+          type: string
+          minLength: 1
+        source_path:
+          type: string
+          pattern: "^/.*$"
+        target_digest:
+          type: string
+          pattern: "^sha(256|384|512):.+"
+    AdmissionContract:
+      type: object
+      required: [kind, source, target, clause, checker_transcript_ref]
+      additionalProperties: false
+      properties:
+        kind:
+          type: string
+          minLength: 1
+        source:
+          type: string
+          minLength: 1
+        target:
+          type: string
+          minLength: 1
+        clause:
+          type: object
+        scope:
+          type: array
+          items:
+            type: string
+        horizon:
+          type: [integer, "null"]
+          minimum: 0
+        frame:
+          type: [string, "null"]
+        validity:
+          type: object
+        checker:
+          type: string
+        limits:
+          type: object
+        failure:
+          type: string
+        contract_id:
+          type: [string, "null"]
+        uncertainty_model:
+          type: [string, "null"]
+        expiry_rule:
+          type: [string, "null"]
+        monitor_obligations:
+          type: array
+          items:
+            type: string
+        obligation_refs:
+          type: array
+          items:
+            type: string
+        reason_refs:
+          type: array
+          items:
+            type: string
+        checker_transcript_ref:
+          type: string
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        reference_digest:
+          type: [string, "null"]
+        monitor_evidence_ref:
+          type: [string, "null"]
+          minLength: 1
+        monitor_completeness_ref:
+          type: [string, "null"]
+          minLength: 1
+    AcceptedClause:
+      type: object
+      required:
+        - clause_id
+        - target
+        - clause
+        - evidence_ref
+        - contract_ref
+        - checker_transcript_ref
+        - obligation_refs
+        - reason_refs
+        - validity_status
+        - monitor_status
+      additionalProperties: false
+      properties:
+        clause_id:
+          type: string
+          minLength: 1
+        target:
+          type: string
+          minLength: 1
+        clause:
+          type: object
+        evidence_ref:
+          type: string
+          minLength: 1
+        contract_ref:
+          type: string
+          minLength: 1
+        checker_transcript_ref:
+          type: string
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        obligation_refs:
+          type: array
+          minItems: 1
+          items:
+            anyOf:
+              - type: string
+                minLength: 1
+              - $ref: "#/components/schemas/ObligationRefRecord"
+        obligation_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObligationRefRecord"
+        reason_refs:
+          type: array
+          minItems: 1
+          items:
+            allOf:
+              - $ref: "#/components/schemas/ReasonRefRecord"
+              - type: object
+                required: [digest]
+                properties:
+                  source_artifact:
+                    type: string
+                    minLength: 1
+                  source_path:
+                    type: string
+                    pattern: "^/.+$"
+                  digest:
+                    type: string
+                    pattern: "^sha(256|384|512):.+"
+        validity_status:
+          enum: [pass, unknown, conflict, expired]
+        monitor_status:
+          enum: [pass, unknown, conflict, silent]
+        monitor_required:
+          type: boolean
+        monitor_evidence_ref:
+          type: [string, "null"]
+          minLength: 1
+        monitor_completeness_ref:
+          type: [string, "null"]
+          minLength: 1
+    TrustAssumption:
+      type: object
+      required:
+        - assumption_id
+        - target
+        - scope
+        - reason_refs
+        - reason_ref_records
+        - obligation_refs
+        - checker_transcript_ref
+      additionalProperties: false
+      properties:
+        assumption_id:
+          type: string
+          minLength: 1
+        target:
+          type: string
+          minLength: 1
+        scope:
+          type: array
+          items:
+            type: string
+        reason_refs:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: "^artifact:.+#/.*$"
+        reason_ref_records:
+          type: array
+          minItems: 1
+          items:
+            allOf:
+              - $ref: "#/components/schemas/ReasonRefRecord"
+              - type: object
+                required: [digest]
+                properties:
+                  source_artifact:
+                    type: string
+                    minLength: 1
+                  source_path:
+                    type: string
+                    pattern: "^/.+$"
+                  digest:
+                    type: string
+                    pattern: "^sha(256|384|512):.+"
+        obligation_refs:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: "^artifact:.+#/.*$"
+        checker_transcript_ref:
+          type: string
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+    CompletionAdmission:
+      type: object
+      required: [tag, completion_status]
+      allOf:
+        - if:
+            properties:
+              completion_status:
+                const: pass
+            required: [completion_status]
+          then:
+            required:
+              - admission_source
+              - expiry
+              - uncertainty_model
+              - reference_digest
+              - checker_result
+              - checker_transcript_ref
+            properties:
+              admission_source:
+                type: string
+                minLength: 1
+              expiry:
+                type: string
+                minLength: 1
+              uncertainty_model:
+                type: string
+                minLength: 1
+              reference_digest:
+                type: string
+                pattern: "^sha(256|384|512):.+$"
+              checker_result:
+                enum: [pass, accepted]
+              checker_transcript_ref:
+                type: string
+                pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+      properties:
+        tag:
+          const: CompletionAdmission
+        completion_status:
+          enum: [pass, unknown, conflict, expired]
+        c_out_ref:
+          type: [string, "null"]
+        c_in_ref:
+          type: [string, "null"]
+        admission_source:
+          type: [string, "null"]
+        expiry:
+          type: [string, "null"]
+        uncertainty_model:
+          type: [string, "null"]
+        reference_digest:
+          type: [string, "null"]
+        checker_result:
+          type: [string, "null"]
+        checker_transcript_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        completion_obligations:
+          type: array
+          items:
+            type: string
+        reason_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonRefRecord"
+    KernelProof:
+      type: object
+      required: [backend_identity, proof_kind, proof_status]
+      properties:
+        backend_identity:
+          type: string
+        proof_kind:
+          type: string
+        proof_status:
+          type: string
+        witness_refs:
+          type: array
+          items:
+            type: string
+            pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        infeasibility_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        inclusion_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        disjointness_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        artifact_conflict_refs:
+          type: array
+          items:
+            type: string
+            pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonRefRecord"
+    KernelProofArtifact:
+      type: object
+      required: [artifact_id, proof]
+      properties:
+        artifact_id:
+          type: string
+        proof:
+          $ref: "#/components/schemas/KernelProof"
+        checker_transcript_ref:
+          type: [string, "null"]
+          pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        witness_provenance_refs:
+          type: array
+          items:
+            type: string
+            pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        reason_refs:
+          type: array
+          items:
+            type: string
+        reason_ref_records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasonRefRecord"
+    MeasurementRelationArtifact:
+      type: object
+      required: [artifact_id, relation, checker_status, proof_refs]
+      properties:
+        artifact_id:
+          type: string
+        checker_status:
+          type: string
+        proof_refs:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+        relation:
+          type: object
+          additionalProperties: false
+          required: [relation_id, calibration_ref, latency_ref, dependency_ref, event_order_ref]
+          properties:
+            relation_id:
+              type: string
+            accepted:
+              type: boolean
+            calibration_ref:
+              type: string
+              pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+            latency_ref:
+              type: string
+              pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+            dependency_ref:
+              type: string
+              pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+            event_order_ref:
+              type: string
+              pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+    RepresentationRelationArtifact:
+      type: object
+      required: [artifact_id, relations, checker_status]
+      properties:
+        artifact_id:
+          type: string
+        checker_status:
+          type: string
+        relations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [relation_id, represented_prefix, proof_ref]
+            properties:
+              relation_id:
+                type: string
+              operational_prefix:
+                type: array
+              represented_prefix:
+                type: array
+              proof_ref:
+                type: string
+                pattern: "^(artifact:.+|sha(256|384|512):.+)$"
+      additionalProperties: false
+      properties:
+        bundle_id:
+          type: string
+        manifest:
+          type: object
+          required: [manifest_id, root_artifact_id, artifact_refs]
+          additionalProperties: false
+          properties:
+            manifest_id:
+              type: string
+            root_artifact_id:
+              type: string
+            artifact_refs:
+              type: array
+              items:
+                oneOf:
+                  - type: string
+                  - $ref: "#/components/schemas/ArtifactRef"
+            dependency_order:
+              type: array
+              items:
+                type: string
+            semantic_roles:
+              type: object
+              additionalProperties:
+                type: string
+            fixed_point_admissions:
+              type: array
+              items:
+                type: string
+            manifest_digest:
+              type: [string, "null"]
+        reference_context:
+          type: object
+          additionalProperties: false
+          properties:
+            snapshot_id:
+              type: string
+            status_time:
+              type: [string, "null"]
+            retrieval_policy:
+              type: string
+            dependency_snapshot:
+              type: object
+              additionalProperties:
+                type: string
+            event_cut:
+              type: array
+              items:
+                type: string
+            profile_ref:
+              type: string
+            allowed_retrieval_policies:
+              type: array
+              items:
+                type: string
+            allowed_immutability_policies:
+              type: array
+              items:
+                type: string
+            schema_digests:
+              type: object
+              additionalProperties:
+                type: string
+            canonicalization_digests:
+              type: object
+              additionalProperties:
+                type: string
+            semantic_roles:
+              type: object
+              additionalProperties:
+                type: string
+        artifacts:
+          type: array
+          items:
+            type: object
+            required: [artifact_ref, artifact]
+            additionalProperties: false
+            properties:
+              artifact_ref:
+                $ref: "#/components/schemas/ArtifactRef"
+              artifact: {}
+              role:
+                type: string
+              schema_name:
+                type: [string, "null"]
+              reason_paths:
+                type: array
+                items:
+                  type: string
+              obligation_refs:
+                type: array
+                items:
+                  type: string
+    ArtifactRef:
+      type: object
+      required: [artifact_id, artifact_type]
+      additionalProperties: false
+      properties:
+        artifact_id:
+          type: string
+        artifact_type:
+          type: string
+        schema_profile:
+          type: string
+        canonicalization:
+          type: string
+        media_type:
+          type: string
+        schema_digest:
+          type: [string, "null"]
+        canonicalization_digest:
+          type: [string, "null"]
+        digest_algorithm:
+          enum: [sha256, sha384, sha512]
+        digest_value:
+          type: [string, "null"]
+        content_uri:
+          type: [string, "null"]
+        retrieval_policy:
+          type: string
+        immutability_policy:
+          type: string
+        provenance_refs:
+          type: array
+          items:
+            type: string
+        semantic_role:
+          type: [string, "null"]
+        dependency_labels:
+          type: array
+          items:
+            type: string

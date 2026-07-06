@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/measurement-relation.schema.json",
+  "title": "DFCC MeasurementRelation",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "bound_ref": {
+      "type": "string",
+      "pattern": "^(artifact:.+|sha(256|384|512):.+)$"
+    }
+  },
+  "required": [
+    "relation_id",
+    "accepted",
+    "calibration_ref",
+    "latency_ref",
+    "dependency_ref",
+    "event_order_ref"
+  ],
+  "properties": {
+    "relation_id": { "type": "string" },
+    "accepted": { "type": "boolean" },
+    "calibration_ref": { "$ref": "#/$defs/bound_ref" },
+    "latency_ref": { "$ref": "#/$defs/bound_ref" },
+    "dependency_ref": { "$ref": "#/$defs/bound_ref" },
+    "event_order_ref": { "$ref": "#/$defs/bound_ref" }
+  }
+}

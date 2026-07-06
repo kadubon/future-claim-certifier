@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/proof-ref.schema.json",
+  "title": "DFCC ProofRef",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proof_id", "proof_kind", "source_path", "status"],
+  "properties": {
+    "proof_id": { "type": "string" },
+    "proof_kind": { "type": "string" },
+    "artifact_ref": { "type": ["string", "null"] },
+    "source_artifact": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^artifact:.+" }
+      ]
+    },
+    "source_path": { "type": "string", "pattern": "^(|/.*)$" },
+    "digest": { "type": ["string", "null"] },
+    "status": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": { "enum": ["accepted", "pass"] }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "digest": {
+            "type": "string",
+            "pattern": "^sha(256|384|512):.+"
+          }
+        },
+        "required": ["digest"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/evidence-artifact.schema.json",
+  "title": "DFCC EvidenceArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["artifact_id", "kind", "checker_status"],
+  "properties": {
+    "artifact_id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object" },
+    "artifact_refs": { "type": "array", "items": { "type": "string" } },
+    "checker_status": { "enum": ["unchecked", "pass", "accepted", "fail", "unknown"] },
+    "reason_refs": { "type": "array", "items": { "$ref": "reason-ref.schema.json" } }
+  }
+}

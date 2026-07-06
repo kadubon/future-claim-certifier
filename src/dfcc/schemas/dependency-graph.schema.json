@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/dependency-graph.schema.json",
+  "title": "DFCC DependencyGraph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["graph_id", "vertices", "edges"],
+  "properties": {
+    "graph_id": { "type": "string", "minLength": 1 },
+    "vertices": { "type": "array", "items": { "type": "string" } },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "target", "relation"],
+        "properties": {
+          "source": { "type": "string" },
+          "target": { "type": "string" },
+          "relation": { "type": "string" },
+          "freshness_seconds": { "type": ["integer", "null"], "minimum": 0 }
+        }
+      }
+    }
+  }
+}

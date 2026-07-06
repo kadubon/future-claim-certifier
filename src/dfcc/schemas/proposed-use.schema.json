@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/proposed-use.schema.json",
+  "title": "DFCC ProposedUse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode", "claim", "horizon", "anchor"],
+  "properties": {
+    "mode": { "type": "string", "minLength": 1 },
+    "claim": { "type": "string", "minLength": 1 },
+    "horizon": { "type": "integer", "minimum": 0 },
+    "anchor": { "type": "string", "minLength": 1 },
+    "scope": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "consumer": { "type": ["string", "null"] },
+    "policy": { "type": ["string", "null"] },
+    "frame": { "type": ["string", "null"] },
+    "context": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

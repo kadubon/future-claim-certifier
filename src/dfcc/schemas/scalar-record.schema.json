@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/scalar-record.schema.json",
+  "title": "DFCC ScalarRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decimal_string", "unit_ref", "dimension_ref"],
+  "properties": {
+    "decimal_string": { "type": "string", "minLength": 1 },
+    "unit_ref": { "type": "string", "minLength": 1 },
+    "dimension_ref": { "type": "string", "minLength": 1 },
+    "exactness": { "type": "string", "default": "exact" },
+    "uncertainty_ref": { "type": ["string", "null"] }
+  }
+}

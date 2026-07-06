@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/issue-certificate.schema.json",
+  "title": "DFCC IssueCertificate",
+  "$defs": {
+    "issue_proof_ref": {
+      "allOf": [
+        { "$ref": "proof-ref.schema.json" },
+        {
+          "type": "object",
+          "required": ["source_artifact", "source_path", "digest", "status"],
+          "properties": {
+            "source_artifact": { "type": "string", "pattern": "^artifact:.+" },
+            "source_path": { "type": "string", "pattern": "^/.*$" },
+            "digest": { "type": "string", "pattern": "^sha(256|384|512):.+" },
+            "status": { "enum": ["accepted", "pass"] }
+          }
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "certificate_id",
+    "schema_profile_ref",
+    "canonicalization_profile_ref",
+    "manifest_digest",
+    "claim_ref",
+    "anchor_ref",
+    "time_basis_ref",
+    "event_order_commitment_ref",
+    "assessment_frame_ref",
+    "assumption_bundle_ref",
+    "initial_context_ref",
+    "representation_interface_ref",
+    "completion_interface_ref",
+    "compiled_semantics_ref",
+    "set_refs",
+    "set_ref_records",
+    "proof_refs",
+    "kernel_verdict_at_issue",
+    "soundness_grade",
+    "dependency_graph_ref",
+    "artifact_refs",
+    "artifact_ref_records",
+    "obligation_refs",
+    "obligation_ref_records",
+    "proof_ref_records",
+    "provenance_refs"
+  ],
+  "properties": {
+    "certificate_id": { "type": "string", "minLength": 1 },
+    "schema_profile_ref": { "type": "string" },
+    "canonicalization_profile_ref": { "type": "string" },
+    "manifest_digest": { "type": "string" },
+    "claim_ref": { "type": "string" },
+    "anchor_ref": { "type": "string" },
+    "time_basis_ref": { "type": "string" },
+    "event_order_commitment_ref": { "type": "string" },
+    "assessment_frame_ref": { "type": "string" },
+    "assumption_bundle_ref": { "type": "string" },
+    "initial_context_ref": { "type": "string" },
+    "representation_interface_ref": { "type": "string" },
+    "completion_interface_ref": { "type": "string" },
+    "compiled_semantics_ref": { "type": "string" },
+    "set_refs": { "type": "array", "items": { "type": "string" } },
+    "set_ref_records": {
+      "type": "array",
+      "items": { "$ref": "set-ref.schema.json" }
+    },
+    "proof_refs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "kernel_verdict_at_issue": { "enum": ["assert", "deny", "infeasible", "abstain", "unknown", "conflict", "invalid"] },
+    "soundness_grade": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "dependency_graph_ref": { "type": "string" },
+    "artifact_refs": { "type": "array", "items": { "type": "string" } },
+    "artifact_ref_records": {
+      "type": "array",
+      "items": { "$ref": "artifact-ref.schema.json" }
+    },
+    "obligation_refs": { "type": "array", "items": { "type": "string" } },
+    "obligation_ref_records": {
+      "type": "array",
+      "items": { "$ref": "obligation-ref.schema.json" }
+    },
+    "proof_ref_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/issue_proof_ref" }
+    },
+    "provenance_refs": { "type": "array", "items": { "type": "string" } }
+    ,
+    "claim_source": { "type": "object" },
+    "bundle_source": { "type": "object" },
+    "anchor_source": { "type": "object" },
+    "time_basis_source": { "type": "object" },
+    "frame": { "type": "object" },
+    "policy": { "type": "object" }
+  },
+  "not": {
+    "required": ["authority_outcome"]
+  }
+}

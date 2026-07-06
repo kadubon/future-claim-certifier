@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/protocol-record-artifact.schema.json",
+  "title": "DFCC ProtocolRecordArtifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "record_kind",
+    "stage",
+    "payload",
+    "artifact_refs",
+    "artifact_ref_records",
+    "proof_refs",
+    "proof_ref_records",
+    "reason_refs",
+    "reason_ref_records",
+    "digest"
+  ],
+  "properties": {
+    "record_id": { "type": "string", "minLength": 1 },
+    "record_kind": { "type": "string", "minLength": 1 },
+    "stage": {
+      "enum": [
+        "Parse",
+        "Canonicalize",
+        "SchemaValidate",
+        "DigestCheck",
+        "ReferenceResolve",
+        "ProfileResolve",
+        "Replay",
+        "GuardEvaluate",
+        "KernelCheck",
+        "AuthorityEmit"
+      ]
+    },
+    "payload": { "type": "object" },
+    "artifact_refs": { "type": "array", "items": { "type": "string" } },
+    "artifact_ref_records": {
+      "type": "array",
+      "items": { "$ref": "artifact-ref.schema.json" }
+    },
+    "proof_refs": { "type": "array", "items": { "type": "string" } },
+    "proof_ref_records": {
+      "type": "array",
+      "items": { "$ref": "proof-ref.schema.json" }
+    },
+    "reason_refs": { "type": "array", "items": { "type": "string" } },
+    "reason_ref_records": {
+      "type": "array",
+      "items": { "$ref": "reason-ref.schema.json" }
+    },
+    "digest": { "type": "string", "pattern": "^sha(256|384|512):.+" }
+  }
+}

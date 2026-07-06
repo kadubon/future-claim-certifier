@@ -1,0 +1,10 @@
+{
+  "mode": "assertion",
+  "claim": "safe-temp",
+  "horizon": 2,
+  "anchor": "anchor:issue",
+  "scope": ["demo"],
+  "consumer": "example-agent",
+  "policy": "demo",
+  "frame": "demo-frame"
+}

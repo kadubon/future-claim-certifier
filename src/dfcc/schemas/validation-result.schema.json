@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dfcc.local/schemas/validation-result.schema.json",
+  "title": "DFCC ValidationResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "stage",
+    "status",
+    "failure_records",
+    "artifact_refs",
+    "reason_refs",
+    "reason_ref_records"
+  ],
+  "properties": {
+    "stage": { "type": "string" },
+    "status": { "enum": ["pass", "reject_input", "invalid_artifact", "unknown", "conflict"] },
+    "failure_records": {
+      "type": "array",
+      "items": { "$ref": "failure-record.schema.json" }
+    },
+    "artifact_refs": { "type": "array", "items": { "type": "string" } },
+    "reason_refs": { "type": "array", "items": { "type": "string" } },
+    "reason_ref_records": {
+      "type": "array",
+      "items": { "$ref": "reason-ref.schema.json" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["status"],
+        "not": { "properties": { "status": { "const": "pass" } } }
+      },
+      "then": {
+        "properties": {
+          "failure_records": { "minItems": 1 },
+          "reason_ref_records": { "minItems": 1 }
+        }
+      }
+    }
+  ]
+}
