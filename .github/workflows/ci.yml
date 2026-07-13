@@ -64,7 +64,7 @@ jobs:
       - uses: github/codeql-action/init@411c4c9a36b3fca4d674f06b6396b2c6d23522c6
         with:
           languages: python
-      - uses: github/codeql-action/analyze@411c4c9a36b3fca4d674f06b6396b2c6d23522c6
+      - uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9
 
   package-audit:
     name: Release archive inspection
